@@ -8,11 +8,11 @@ public class BrokerConfig extends Model {
     private String url;
 
     private BrokerConfig() {
-        System.out.println("Broker Config created");
     }
 
     public static BrokerConfig getInstance() {
         if (instance == null) {
+            System.out.println("Broker Config created");
             instance = new BrokerConfig();
         }
         return instance;

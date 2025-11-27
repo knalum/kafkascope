@@ -41,14 +41,14 @@ public class TreeContextMenuAdapter extends MouseAdapter {
 
                 JPopupMenu popup = new JPopupMenu();
                 JMenuItem deleteTopic = new JMenuItem("Delete topic");
-                deleteTopic.addActionListener(evt->{
+                deleteTopic.addActionListener(evt -> {
                     AppKafkaClient.deleteTopic(selectedNode.getUserObject().toString());
                 });
                 popup.add(deleteTopic);
 
-                popup.add(new JMenuItem("Add topic"){{
-                    addActionListener(e->{
-                        AppKafkaClient.createTopic(UUID.randomUUID().toString().substring(0,4));
+                popup.add(new JMenuItem("Add topic") {{
+                    addActionListener(e -> {
+                        AppKafkaClient.createTopic(UUID.randomUUID().toString().substring(0, 4));
                         try {
                             Set<String> topics = AppKafkaClient.connect(BrokerConfig.getInstance());
                             MessageBus.getInstance().publish(new ConnectedToBrokerMessage(BrokerConfig.getInstance().getUrl(), topics));
@@ -57,6 +57,12 @@ public class TreeContextMenuAdapter extends MouseAdapter {
                         } catch (InterruptedException ex) {
                             throw new RuntimeException(ex);
                         }
+                    });
+                }});
+
+                popup.add(new JMenuItem("Describe") {{
+                    addActionListener(e -> {
+                        AppKafkaClient.describeTopic(selectedNode.getUserObject().toString());
                     });
                 }});
 

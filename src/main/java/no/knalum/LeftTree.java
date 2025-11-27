@@ -1,25 +1,21 @@
 package no.knalum;
 
+import org.jdesktop.swingx.prompt.PromptSupport;
+
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.datatransfer.StringSelection;
-import java.awt.Toolkit;
-import java.awt.datatransfer.Clipboard;
 
 public class LeftTree extends JPanel implements MyListener {
     private final JTree tree;
     private final DefaultMutableTreeNode root;
-    private DefaultMutableTreeNode filteredRoot;
-    private final JTextField filter;
+    private JTextField filter;
     private DefaultTreeModel originalModel;
 
     public LeftTree() {
@@ -27,7 +23,8 @@ public class LeftTree extends JPanel implements MyListener {
         setDoubleBuffered(true);
         this.root = new DefaultMutableTreeNode("Broker");
 
-        add(this.filter = new JTextField(), BorderLayout.NORTH);
+        add(createFilterPanel(), BorderLayout.NORTH);
+
         this.filter.addKeyListener(new KeyAdapter() {
             @Override
             public void keyTyped(KeyEvent e) {
@@ -40,38 +37,49 @@ public class LeftTree extends JPanel implements MyListener {
         });
         add(new JScrollPane(this.tree = new JTree(root)));
         tree.expandRow(0);
+        tree.setCellRenderer(new DefaultTreeCellRenderer() {
+            @Override
+            public Component getTreeCellRendererComponent(
+                    JTree tree, Object value, boolean sel,
+                    boolean expanded, boolean leaf, int row, boolean hasFocus) {
+
+                JLabel label = (JLabel) super.getTreeCellRendererComponent(
+                        tree, value, sel, expanded, leaf, row, hasFocus);
+
+                String text = value.toString();
+
+                if (text.contains("localhost")) {
+                    setIcon(new ImageIcon(getClass().getResource("/icons/database.png")));
+                }
+
+                return label;
+            }
+        });
+
 
         tree.addMouseListener(new TreeContextMenuAdapter(tree));
         MessageBus.getInstance().subscribe(this);
         tree.getSelectionModel().addTreeSelectionListener(new MySelectionListener());
     }
 
-    private DefaultTreeModel createFilteredTreeModel() {
-        DefaultMutableTreeNode root1 = (DefaultMutableTreeNode) ( originalModel).getRoot();
-        DefaultMutableTreeNode filteredRoot = new DefaultMutableTreeNode(((DefaultMutableTreeNode) originalModel.getRoot()).getUserObject());
-        for (int index = 0; index < root1.getChildCount(); index++) {
-                if (((DefaultMutableTreeNode)root1.getChildAt(index)).getUserObject().toString().toLowerCase().contains(filter.getText().toLowerCase())) {
-                    Object userObject = ((DefaultMutableTreeNode) root1.getChildAt(index)).getUserObject();
-                    filteredRoot.add(new DefaultMutableTreeNode(userObject));
-                }
-        }
-        return new DefaultTreeModel(filteredRoot);
+    private JPanel createFilterPanel() {
+        JPanel jPanel = new JPanel(new BorderLayout());
+        this.filter = new JTextField();
+        PromptSupport.setPrompt("Search", filter);
+        jPanel.add(this.filter, BorderLayout.CENTER);
+        return jPanel;
     }
 
-    private JPopupMenu createTreePopupMenu() {
-        JPopupMenu menu = new JPopupMenu();
-        JMenuItem copyItem = new JMenuItem("Copy");
-        copyItem.addActionListener(e -> {
-            Object selected = tree.getLastSelectedPathComponent();
-            if (selected != null) {
-                StringSelection selection = new StringSelection(selected.toString());
-                Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-                clipboard.setContents(selection, selection);
+    private DefaultTreeModel createFilteredTreeModel() {
+        DefaultMutableTreeNode root1 = (DefaultMutableTreeNode) (originalModel).getRoot();
+        DefaultMutableTreeNode filteredRoot = new DefaultMutableTreeNode(((DefaultMutableTreeNode) originalModel.getRoot()).getUserObject());
+        for (int index = 0; index < root1.getChildCount(); index++) {
+            if (((DefaultMutableTreeNode) root1.getChildAt(index)).getUserObject().toString().toLowerCase().contains(filter.getText().toLowerCase())) {
+                Object userObject = ((DefaultMutableTreeNode) root1.getChildAt(index)).getUserObject();
+                filteredRoot.add(new DefaultMutableTreeNode(userObject));
             }
-        });
-        menu.add(copyItem);
-        // Add more menu items here if needed
-        return menu;
+        }
+        return new DefaultTreeModel(filteredRoot);
     }
 
     class MySelectionListener implements TreeSelectionListener {
@@ -83,7 +91,7 @@ public class LeftTree extends JPanel implements MyListener {
             if (client != null) {
                 client.closeSubscribing();
             }
-            if(e.getNewLeadSelectionPath()==null){
+            if (e.getNewLeadSelectionPath() == null) {
                 return;
             }
             Object lastPathComponent = e.getNewLeadSelectionPath().getLastPathComponent();
@@ -98,7 +106,7 @@ public class LeftTree extends JPanel implements MyListener {
         if (message instanceof ConnectedToBrokerMessage message1) {
             this.originalModel = new DefaultTreeModel(new DefaultMutableTreeNode(message1.brokerUrl));
 
-            message1.getNewNodes().forEach(n -> {
+            message1.getNewNodes().stream().sorted().forEach(n -> {
                 ((DefaultMutableTreeNode) originalModel.getRoot()).add(new DefaultMutableTreeNode(n));
             });
 

@@ -2,10 +2,11 @@ package no.knalum;
 
 import javax.swing.*;
 
-public class RightView extends JSplitPane {
+public class RightView extends JTabbedPane {
     public RightView() {
-        super(VERTICAL_SPLIT,true,new MessageTable(),new ProducerPanel());
-        setDoubleBuffered(true);
-        setDividerLocation(400);
+        addTab("Data", new TopicProduceConsumePanel());
+        addTab("Configs", new TopicConfigsPanel());
+
+        setSelectedIndex(1);
     }
 }

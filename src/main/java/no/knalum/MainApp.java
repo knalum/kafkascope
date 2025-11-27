@@ -2,53 +2,51 @@ package no.knalum;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Set;
 
 public class MainApp extends JFrame {
 
     MainApp() {
-        setJMenuBar(new FileMenuBar(this));
+        System.out.println("Init MainApp");
+        setMenuBar(new FileMenuBar(this));
         add(new MainSplitPane());
         add(new StatusBar(), BorderLayout.SOUTH);
         ConfigSaver.loadConfig();
-        if(!BrokerConfig.getInstance().getUrl().isEmpty()){
-            connectToKafkaAndPopulateTree();
+        if (!BrokerConfig.getInstance().getUrl().isEmpty()) {
+            AppKafkaClient.connectToKafkaAndPopulateTree();
         }
 
-
-    }
-
-    private static void connectToKafkaAndPopulateTree() {
-        System.out.println("Try to connect at init "+BrokerConfig.getInstance().getUrl());
-        try {
-            Set<String> topics = AppKafkaClient.connect(BrokerConfig.getInstance());
-            MessageBus.getInstance().publish(new ConnectedToBrokerMessage(BrokerConfig.getInstance().getUrl(), topics));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowOpened(java.awt.event.WindowEvent e) {
+                MainApp.super.getRootPane().requestFocusInWindow();
+            }
+        });
     }
 
 
     public static void main(String[] args) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-
-        String info = String.format(
-                "Branch: %s\nTag: %s\nCommit: %s",
-                GitInfo.getBranch(),
-                GitInfo.getGitTag(),
-                GitInfo.getCommit()
-        );
-        System.out.println(info);
-        /*
+        setDockIcon();
         UIManager.setLookAndFeel("com.formdev.flatlaf.themes.FlatMacLightLaf");
         RepaintManager.currentManager(null).setDoubleBufferingEnabled(true);
 
         MainApp mainApp = new MainApp();
         mainApp.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        mainApp.setSize(700, 500);
+        mainApp.setSize(1000, 700);
         mainApp.setLocationRelativeTo(null);
-        mainApp.setTitle("KafkaScope");
+        mainApp.setTitle("KafkaScope \uD83D\uDD0D");
         mainApp.setVisible(true);
 
-         */
+    }
+
+    private static void setDockIcon() {
+        if (Taskbar.isTaskbarSupported()) {
+            Taskbar taskbar = Taskbar.getTaskbar();
+            try {
+                Image icon = Toolkit.getDefaultToolkit().getImage(MainApp.class.getResource("/logo.png"));
+                taskbar.setIconImage(icon);
+            } catch (UnsupportedOperationException e) {
+                System.err.println("Custom Dock icon not supported");
+            }
+        }
     }
 }
