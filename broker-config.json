@@ -1,1 +1,4 @@
-{"url":"localhost:29092"}
+{
+  "url": "kafka:29092",
+  "schemaRegistryUrl": "http://schema-registry:8081"
+}

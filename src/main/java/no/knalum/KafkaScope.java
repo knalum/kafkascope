@@ -11,7 +11,7 @@ public class KafkaScope extends JFrame {
         add(new MainSplitPane());
         add(new StatusBar(), BorderLayout.SOUTH);
         ConfigSaver.loadConfig();
-        if (!BrokerConfig.getInstance().getUrl().isEmpty()) {
+        if (!BrokerConfig.getInstance().getBrokerUrl().isEmpty()) {
             AppKafkaClient.connectToKafkaAndPopulateTree();
         }
 

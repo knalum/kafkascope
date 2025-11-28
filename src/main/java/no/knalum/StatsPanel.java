@@ -67,6 +67,9 @@ public class StatsPanel extends JPanel implements MyListener {
 
     private void populateStatsPanel(KafkaStatsClient.TopicStats topicStats) {
         findTextFieldByName(this.getRootPane(), "Size").setText(String.valueOf(topicStats.size()));
+        findTextFieldByName(this.getRootPane(), "Count").setText(String.valueOf(topicStats.count()));
+        findTextFieldByName(this.getRootPane(), "Partitions").setText(String.valueOf(topicStats.numPartitions()));
+        findTextFieldByName(this.getRootPane(), "Last record").setText(String.valueOf(topicStats.lastTs()));
 
         revalidate();
         repaint();

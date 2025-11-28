@@ -24,7 +24,7 @@ public class AppKafkaClient {
     private boolean isSubscribing;
 
     public static Set<String> connect(BrokerConfig instance) throws ExecutionException, InterruptedException {
-        String brokerUrl = instance.getUrl();
+        String brokerUrl = instance.getBrokerUrl();
         java.util.Properties props = new java.util.Properties();
         props.put("bootstrap.servers", brokerUrl);
         AdminClient client = AdminClient.create(props);
@@ -34,7 +34,7 @@ public class AppKafkaClient {
     public static void connectToKafkaAndPopulateTree() {
         try {
             Set<String> topics = AppKafkaClient.connect(BrokerConfig.getInstance());
-            MessageBus.getInstance().publish(new ConnectedToBrokerMessage(BrokerConfig.getInstance().getUrl(), topics));
+            MessageBus.getInstance().publish(new ConnectedToBrokerMessage(BrokerConfig.getInstance().getBrokerUrl(), topics));
         } catch (Exception e) {
             ErrorModal.showError("Error connecting to Kafka: " + e.getMessage());
         }
@@ -42,7 +42,7 @@ public class AppKafkaClient {
 
 
     public static void sendMessageToBroker(String topic, String key, String value) {
-        String broker = BrokerConfig.getInstance().getUrl();
+        String broker = BrokerConfig.getInstance().getBrokerUrl();
 
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, broker);
@@ -55,7 +55,7 @@ public class AppKafkaClient {
     }
 
     public static void deleteTopic(String topic) {
-        String brokerUrl = BrokerConfig.getInstance().getUrl();
+        String brokerUrl = BrokerConfig.getInstance().getBrokerUrl();
         Properties props = new Properties();
         props.put("bootstrap.servers", brokerUrl);
         try (AdminClient adminClient = AdminClient.create(props)) {
@@ -76,7 +76,7 @@ public class AppKafkaClient {
     }
 
     public static void createTopic(String topic) {
-        String brokerUrl = BrokerConfig.getInstance().getUrl();
+        String brokerUrl = BrokerConfig.getInstance().getBrokerUrl();
         Properties props = new Properties();
         props.put("bootstrap.servers", brokerUrl);
         try (AdminClient adminClient = AdminClient.create(props)) {
@@ -88,7 +88,7 @@ public class AppKafkaClient {
     }
 
     public static void describeTopic(String topic) {
-        String brokerUrl = BrokerConfig.getInstance().getUrl();
+        String brokerUrl = BrokerConfig.getInstance().getBrokerUrl();
         Properties props = new Properties();
         props.put("bootstrap.servers", brokerUrl);
         try (AdminClient adminClient = AdminClient.create(props)) {
@@ -107,7 +107,7 @@ public class AppKafkaClient {
     }
 
     public static Collection<ConfigEntry> describeTopic2(String topic) {
-        String brokerUrl = BrokerConfig.getInstance().getUrl();
+        String brokerUrl = BrokerConfig.getInstance().getBrokerUrl();
         Properties props = new Properties();
         props.put("bootstrap.servers", brokerUrl);
         try (AdminClient admin = AdminClient.create(props)) {
@@ -124,7 +124,7 @@ public class AppKafkaClient {
 
     public static void updateTopicConfig(String topic, List<ConfigEntry> configEntry) {
         Properties props = new Properties();
-        props.put("bootstrap.servers", BrokerConfig.getInstance().getUrl());
+        props.put("bootstrap.servers", BrokerConfig.getInstance().getBrokerUrl());
         try (AdminClient adminClient = AdminClient.create(props)) {
             ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, topic);
 
@@ -149,7 +149,7 @@ public class AppKafkaClient {
 
     public static long getTopicStats(String selectedTopic) {
         Properties props = new Properties();
-        props.put("bootstrap.servers", BrokerConfig.getInstance().getUrl());
+        props.put("bootstrap.servers", BrokerConfig.getInstance().getBrokerUrl());
         try (AdminClient admin = AdminClient.create(props)) {
 
             String topic = selectedTopic;
@@ -193,7 +193,7 @@ public class AppKafkaClient {
         props.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, CustomValueDeserializer.class);
-        props.put("schema.registry.url", "http://localhost:8081");
+        props.put("schema.registry.url", BrokerConfig.getInstance().getSchemaRegistryUrl());
         //    props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, SpecificAvroSerde::class.java)
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 

@@ -6,6 +6,7 @@ public class BrokerConfig extends Model {
     private static BrokerConfig instance;
 
     private String url;
+    private String schemaRegistryUrl;
 
     private BrokerConfig() {
     }
@@ -19,7 +20,7 @@ public class BrokerConfig extends Model {
     }
 
 
-    public String getUrl() {
+    public String getBrokerUrl() {
         return url;
     }
 
@@ -27,5 +28,20 @@ public class BrokerConfig extends Model {
         String old = this.url;
         this.url = url;
         firePropertyChange("url", old, url);
+    }
+
+    public String getSchemaRegistryUrl() {
+        return schemaRegistryUrl;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setSchemaRegistryUrl(String schemaRegistryUrl) {
+        this.schemaRegistryUrl = schemaRegistryUrl;
+        String old = this.schemaRegistryUrl;
+        this.schemaRegistryUrl = schemaRegistryUrl;
+        firePropertyChange("schemaRegistryUrl", old, schemaRegistryUrl);
     }
 }

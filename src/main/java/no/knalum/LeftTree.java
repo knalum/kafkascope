@@ -97,7 +97,7 @@ public class LeftTree extends JPanel implements MyListener {
             Object lastPathComponent = e.getNewLeadSelectionPath().getLastPathComponent();
             MessageBus.getInstance().publish(new TreeTopicChanged(lastPathComponent.toString()));
             this.client = new AppKafkaClient();
-            client.subscribeToKafkaTopic(BrokerConfig.getInstance().getUrl(), lastPathComponent.toString());
+            client.subscribeToKafkaTopic(BrokerConfig.getInstance().getBrokerUrl(), lastPathComponent.toString());
         }
     }
 

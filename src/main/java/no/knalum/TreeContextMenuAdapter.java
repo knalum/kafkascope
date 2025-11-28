@@ -51,7 +51,7 @@ public class TreeContextMenuAdapter extends MouseAdapter {
                         AppKafkaClient.createTopic(UUID.randomUUID().toString().substring(0, 4));
                         try {
                             Set<String> topics = AppKafkaClient.connect(BrokerConfig.getInstance());
-                            MessageBus.getInstance().publish(new ConnectedToBrokerMessage(BrokerConfig.getInstance().getUrl(), topics));
+                            MessageBus.getInstance().publish(new ConnectedToBrokerMessage(BrokerConfig.getInstance().getBrokerUrl(), topics));
                         } catch (ExecutionException ex) {
                             throw new RuntimeException(ex);
                         } catch (InterruptedException ex) {

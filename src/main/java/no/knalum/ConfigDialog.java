@@ -20,13 +20,13 @@ public class ConfigDialog extends JDialog {
         okButton.addActionListener(e -> {
             try {
                 Set<String> topics = AppKafkaClient.connect(BrokerConfig.getInstance());
-                MessageBus.getInstance().publish(new ConnectedToBrokerMessage(BrokerConfig.getInstance().getUrl(), topics));
+                MessageBus.getInstance().publish(new ConnectedToBrokerMessage(BrokerConfig.getInstance().getBrokerUrl(), topics));
                 ConfigSaver.saveConfig();
                 dispose();
 
 
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Failed to connect to Kafka Broker: " + BrokerConfig.getInstance().getUrl() + "\n" + ex.getMessage(),
+                JOptionPane.showMessageDialog(this, "Failed to connect to Kafka Broker: " + BrokerConfig.getInstance().getBrokerUrl() + "\n" + ex.getMessage(),
                         "Error", JOptionPane.ERROR_MESSAGE);
             }
         });

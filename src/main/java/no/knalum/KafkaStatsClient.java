@@ -4,6 +4,8 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
@@ -16,6 +18,8 @@ import java.util.*;
 
 public class KafkaStatsClient {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStatsClient.class);
+
     record TopicStats(Long size, Long count, String lastTs, Integer numPartitions) {
     }
 
@@ -26,15 +30,13 @@ public class KafkaStatsClient {
                 "count", "kafka.log:type=Log,name=LogEndOffset,topic=" + topicName + ",*"
         ));
 
-        ConsumerStats consumerStats = findTsAndNumPartitions();
+        ConsumerStats consumerStats = findTsAndNumPartitions(topicName);
 
         System.out.println(stats);
-        System.out.println("Last: " + Instant.ofEpochMilli(consumerStats.lastTs));
-        System.out.println("Num partitions: " + consumerStats.numPartitions);
 
         return new TopicStats(
-                Long.parseLong(stats.get("size")),
-                Long.parseLong(stats.get("count")),
+                Long.parseLong(stats.get("size") == null ? "-1" : stats.get("size")),
+                Long.parseLong(stats.get("count") == null ? "-1" : stats.get("count")),
                 Instant.ofEpochMilli(consumerStats.lastTs).toString(),
                 consumerStats.numPartitions
         );
@@ -44,21 +46,20 @@ public class KafkaStatsClient {
     record ConsumerStats(Long lastTs, Integer numPartitions) {
     }
 
-    ConsumerStats findTsAndNumPartitions() {
+    ConsumerStats findTsAndNumPartitions(String topic) {
         ConsumerStats stats;
         Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:29092");
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BrokerConfig.getInstance().getBrokerUrl());
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "temp");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, CustomValueDeserializer.class);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
-        props.put("schema.registry.url", "http://localhost:8081");
+        props.put("schema.registry.url", BrokerConfig.getInstance().getSchemaRegistryUrl());
 
         int numberOfPartitions;
         Long ts = 0L;
 
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props)) {
-            String topic = "f40b";
             List<TopicPartition> partitions = new ArrayList<>();
             for (int p = 0; p < consumer.partitionsFor(topic).size(); p++) {
                 partitions.add(new TopicPartition(topic, p));
@@ -82,21 +83,27 @@ public class KafkaStatsClient {
         return new ConsumerStats(ts, numberOfPartitions);
     }
 
-    Map<String, String> getStats(Map<String, String> metricNames) throws Exception {
-        String jmxUrl = "service:jmx:rmi:///jndi/rmi://localhost:9999/jmxrmi";
+    Map<String, String> getStats(Map<String, String> metricNames) {
+        try {
+            String jmxUrl = "service:jmx:rmi:///jndi/rmi://localhost:9999/jmxrmi";
 
-        JMXServiceURL url = new JMXServiceURL(jmxUrl);
-        JMXConnector jmxc = JMXConnectorFactory.connect(url, null);
-        MBeanServerConnection mbeanConn = jmxc.getMBeanServerConnection();
+            JMXServiceURL url = new JMXServiceURL(jmxUrl);
+            JMXConnector jmxc = JMXConnectorFactory.connect(url, null);
+            MBeanServerConnection mbeanConn = jmxc.getMBeanServerConnection();
 
-        Map<String, String> stats = new HashMap<>();
-        for (Map.Entry<String, String> metricName : metricNames.entrySet()) {
-            Set<ObjectName> mbeans = mbeanConn.queryNames(new ObjectName(metricName.getValue()), null);
-            for (ObjectName mbean : mbeans) {
-                Long value = (Long) mbeanConn.getAttribute(mbean, "Value");
-                stats.put(metricName.getKey(), value.toString());
+            Map<String, String> stats = new HashMap<>();
+            for (Map.Entry<String, String> metricName : metricNames.entrySet()) {
+                Set<ObjectName> mbeans = mbeanConn.queryNames(new ObjectName(metricName.getValue()), null);
+                for (ObjectName mbean : mbeans) {
+                    Long value = (Long) mbeanConn.getAttribute(mbean, "Value");
+                    stats.put(metricName.getKey(), value.toString());
+                }
             }
+            return stats;
+
+        } catch (Exception ex) {
+            LOGGER.error("Failed to get JMX stats: {}", ex.getMessage());
         }
-        return stats;
+        return Collections.emptyMap();
     }
 }
