@@ -1,4 +1,4 @@
-# KafkaScope
+# KafkaScope 🔍
 
 KafkaScope is a versatile desktop application for administration, monitoring, and working with [Apache Kafka](https://kafka.apache.org/).
 
@@ -72,3 +72,5 @@ For more information, see https://commonsclause.com/.
 ---
 
 For questions or contributions, please open an issue or pull request.
+
+Created by Konstantin Nalum
