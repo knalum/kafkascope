@@ -61,7 +61,7 @@ public class StatsPanel extends JPanel implements MyListener {
             System.out.println(topicStats);
             populateStatsPanel(topicStats);
         } catch (Exception e) {
-            ErrorModal.showError("Error: " + e.getMessage());
+            LOGGER.error("Failed to get topic stats for topic " + selectedTopic, e);
         }
     }
 

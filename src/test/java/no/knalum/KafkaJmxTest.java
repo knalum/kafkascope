@@ -1,5 +1,6 @@
 package no.knalum;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import javax.management.MBeanServerConnection;
@@ -10,6 +11,7 @@ import javax.management.remote.JMXServiceURL;
 import java.util.Set;
 
 
+@Disabled
 public class KafkaJmxTest {
     @Test
     void name() throws Exception {

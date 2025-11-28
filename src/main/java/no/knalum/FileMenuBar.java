@@ -4,16 +4,16 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.UUID;
 
-public class FileMenuBar extends MenuBar {
+public class FileMenuBar extends JMenuBar {
     private final KafkaScope kafkaScope;
 
     public FileMenuBar(KafkaScope kafkaScope) {
         this.kafkaScope = kafkaScope;
-        Menu menu = new Menu("File");
+        JMenu menu = new JMenu("File");
         JMenuItem settingsItem = new JMenuItem("Settings...");
         settingsItem.addActionListener(e -> new ConfigDialog(kafkaScope));
 
-        MenuItem closeItem = new MenuItem("Close");
+        JMenuItem closeItem = new JMenuItem("Close");
         closeItem.addActionListener(e -> System.exit(0));
         menu.add(closeItem);
 
@@ -22,11 +22,11 @@ public class FileMenuBar extends MenuBar {
         add(new Help());
     }
 
-    private class EditMenu extends Menu {
+    private class EditMenu extends JMenu {
         public EditMenu() {
             super("Edit");
 
-            add(new MenuItem("Create topic") {{
+            add(new JMenuItem("Create topic") {{
                 addActionListener(e -> {
                     AppKafkaClient.createTopic(UUID.randomUUID().toString().substring(0, 8));
                     AppKafkaClient.connectToKafkaAndPopulateTree();
@@ -34,7 +34,7 @@ public class FileMenuBar extends MenuBar {
                 });
             }});
 
-            add(new MenuItem("Refresh topics") {{
+            add(new JMenuItem("Refresh topics") {{
                 addActionListener(e -> {
                     AppKafkaClient.connectToKafkaAndPopulateTree();
                 });
@@ -43,10 +43,10 @@ public class FileMenuBar extends MenuBar {
         }
     }
 
-    private class Help extends Menu {
+    private class Help extends JMenu {
         public Help() {
             super("Help");
-            add(new MenuItem("About...") {{
+            add(new JMenuItem("About...") {{
                 addActionListener(e -> {
                     new AboutDialog(kafkaScope);
                 });

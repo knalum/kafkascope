@@ -7,7 +7,7 @@ public class KafkaScope extends JFrame {
 
     KafkaScope() {
         System.out.println("Init MainApp");
-        setMenuBar(new FileMenuBar(this));
+        setJMenuBar(new FileMenuBar(this));
         add(new MainSplitPane());
         add(new StatusBar(), BorderLayout.SOUTH);
         ConfigSaver.loadConfig();
