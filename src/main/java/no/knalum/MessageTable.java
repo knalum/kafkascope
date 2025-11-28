@@ -7,6 +7,7 @@ import java.awt.*;
 
 public class MessageTable extends JPanel implements MyListener {
     private final JTable table;
+    private String selectedTopic;
 
     public MessageTable() {
         setLayout(new BorderLayout());
@@ -43,6 +44,8 @@ public class MessageTable extends JPanel implements MyListener {
             ((DefaultTableModel) table.getModel()).insertRow(0, new Object[]{recordMessage.time(), recordMessage.key(), recordMessage.payload()});
         } else if (message instanceof TreeTopicChanged treeTopicChanged) {
             ((DefaultTableModel) table.getModel()).setRowCount(0);
+            this.selectedTopic = treeTopicChanged.topic();
         }
     }
+
 }

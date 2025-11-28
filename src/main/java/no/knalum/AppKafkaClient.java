@@ -8,6 +8,8 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.serialization.StringSerializer;
 
@@ -143,6 +145,39 @@ public class AppKafkaClient {
         } catch (Exception e) {
             ErrorModal.showError("Error: " + e.getMessage());
         }
+    }
+
+    public static long getTopicStats(String selectedTopic) {
+        Properties props = new Properties();
+        props.put("bootstrap.servers", BrokerConfig.getInstance().getUrl());
+        try (AdminClient admin = AdminClient.create(props)) {
+
+            String topic = selectedTopic;
+            var topicDesc = admin.describeTopics(List.of(topic))
+                    .all().get().get(topic);
+
+            List<TopicPartition> partitions = new ArrayList<>();
+            for (TopicPartitionInfo p : topicDesc.partitions()) {
+                partitions.add(new TopicPartition(topic, p.partition()));
+            }
+
+            long total = 0;
+            for (TopicPartition tp : partitions) {
+
+                ListOffsetsResult begin = admin.listOffsets(Map.of(tp, OffsetSpec.earliest()));
+                ListOffsetsResult listOffsetsResult = admin.listOffsets(Map.of(tp, OffsetSpec.latest()));
+                long earliest = begin.all().get().get(tp).offset();
+                long latest = listOffsetsResult.all().get().get(tp).offset();
+
+                total += (latest - earliest);
+            }
+
+            System.out.println("Messages in topic: " + total);
+            return total;
+        } catch (Exception e) {
+            ErrorModal.showError("Error getting topic stats: " + e.getMessage());
+        }
+        return -1;
     }
 
     public void closeSubscribing() {

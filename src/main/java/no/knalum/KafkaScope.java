@@ -3,9 +3,9 @@ package no.knalum;
 import javax.swing.*;
 import java.awt.*;
 
-public class MainApp extends JFrame {
+public class KafkaScope extends JFrame {
 
-    MainApp() {
+    KafkaScope() {
         System.out.println("Init MainApp");
         setMenuBar(new FileMenuBar(this));
         add(new MainSplitPane());
@@ -18,7 +18,7 @@ public class MainApp extends JFrame {
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowOpened(java.awt.event.WindowEvent e) {
-                MainApp.super.getRootPane().requestFocusInWindow();
+                KafkaScope.super.getRootPane().requestFocusInWindow();
             }
         });
     }
@@ -29,12 +29,12 @@ public class MainApp extends JFrame {
         UIManager.setLookAndFeel("com.formdev.flatlaf.themes.FlatMacLightLaf");
         RepaintManager.currentManager(null).setDoubleBufferingEnabled(true);
 
-        MainApp mainApp = new MainApp();
-        mainApp.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        mainApp.setSize(1000, 700);
-        mainApp.setLocationRelativeTo(null);
-        mainApp.setTitle("KafkaScope \uD83D\uDD0D");
-        mainApp.setVisible(true);
+        KafkaScope kafkaScope = new KafkaScope();
+        kafkaScope.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        kafkaScope.setSize(1000, 700);
+        kafkaScope.setLocationRelativeTo(null);
+        kafkaScope.setTitle("KafkaScope \uD83D\uDD0D");
+        kafkaScope.setVisible(true);
 
     }
 
@@ -42,7 +42,7 @@ public class MainApp extends JFrame {
         if (Taskbar.isTaskbarSupported()) {
             Taskbar taskbar = Taskbar.getTaskbar();
             try {
-                Image icon = Toolkit.getDefaultToolkit().getImage(MainApp.class.getResource("/logo.png"));
+                Image icon = Toolkit.getDefaultToolkit().getImage(KafkaScope.class.getResource("/logo.png"));
                 taskbar.setIconImage(icon);
             } catch (UnsupportedOperationException e) {
                 System.err.println("Custom Dock icon not supported");

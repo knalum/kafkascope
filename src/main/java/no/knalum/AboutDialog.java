@@ -3,8 +3,8 @@ package no.knalum;
 import javax.swing.*;
 
 public class AboutDialog extends AppDialog {
-    public AboutDialog(MainApp mainApp) {
-        super(mainApp, "About", createJPanel());
+    public AboutDialog(KafkaScope kafkaScope) {
+        super(kafkaScope, "About", createJPanel());
         setSize(800, 800);
     }
 

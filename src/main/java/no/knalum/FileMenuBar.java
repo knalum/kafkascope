@@ -5,13 +5,13 @@ import java.awt.*;
 import java.util.UUID;
 
 public class FileMenuBar extends MenuBar {
-    private final MainApp mainApp;
+    private final KafkaScope kafkaScope;
 
-    public FileMenuBar(MainApp mainApp) {
-        this.mainApp = mainApp;
+    public FileMenuBar(KafkaScope kafkaScope) {
+        this.kafkaScope = kafkaScope;
         Menu menu = new Menu("File");
         JMenuItem settingsItem = new JMenuItem("Settings...");
-        settingsItem.addActionListener(e -> new ConfigDialog(mainApp));
+        settingsItem.addActionListener(e -> new ConfigDialog(kafkaScope));
 
         MenuItem closeItem = new MenuItem("Close");
         closeItem.addActionListener(e -> System.exit(0));
@@ -48,7 +48,7 @@ public class FileMenuBar extends MenuBar {
             super("Help");
             add(new MenuItem("About...") {{
                 addActionListener(e -> {
-                    new AboutDialog(mainApp);
+                    new AboutDialog(kafkaScope);
                 });
             }});
         }

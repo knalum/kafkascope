@@ -43,12 +43,13 @@ public class TopicConfigsPanel extends JPanel implements MyListener {
         return jPanel;
     }
 
-    private static JPanel createRow(String labelText, String value) {
+    public static JPanel createRow(String labelText, String value) {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
 
         JLabel label = new JLabel(labelText);
         JTextField textField = new JTextField(value);
+        textField.setName(labelText);
 
         // Optional: align label and text field nicely
         label.setPreferredSize(new Dimension(200, label.getPreferredSize().height));
@@ -68,7 +69,7 @@ public class TopicConfigsPanel extends JPanel implements MyListener {
     public void handleMessage(AppMessage message) {
         if (message instanceof TreeTopicChanged topicSelected) {
             this.selectedTopic = topicSelected.topic();
-            getTopicConfigParams(((TreeTopicChanged) message).topic());
+            SwingUtilities.invokeLater(() -> getTopicConfigParams(selectedTopic));
         }
     }
 
