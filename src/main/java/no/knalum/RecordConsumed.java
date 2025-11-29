@@ -1,5 +1,7 @@
 package no.knalum;
 
-public record RecordConsumed(String time, String key, String payload) implements AppMessage {
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+
+public record RecordConsumed(ConsumerRecord record) implements AppMessage {
 
 }

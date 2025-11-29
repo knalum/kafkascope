@@ -38,7 +38,7 @@ public class StatsPanel extends JPanel implements MyListener {
                 () -> {
                     if (selectedTopic != null) {
                         LOGGER.info("Get stats");
-                        SwingUtilities.invokeLater(() -> getStats(selectedTopic));
+                        getStats(selectedTopic);
                     }
                 },
                 0, STATS_UPDATE_INTERVAL_SEC, java.util.concurrent.TimeUnit.SECONDS
@@ -49,7 +49,13 @@ public class StatsPanel extends JPanel implements MyListener {
     public void handleMessage(AppMessage message) {
         if (message instanceof TreeTopicChanged treeTopicChanged) {
             this.selectedTopic = treeTopicChanged.topic();
-            SwingUtilities.invokeLater(() -> getStats(selectedTopic));
+            new SwingWorker<Void, Void>() {
+                @Override
+                protected Void doInBackground() {
+                    getStats(selectedTopic);
+                    return null;
+                }
+            }.execute();
         }
     }
 

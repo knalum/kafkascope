@@ -12,9 +12,9 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.swing.*;
-import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutionException;
 public class AppKafkaClient {
 
     private boolean isSubscribing;
+    private static final Logger LOGGER = LoggerFactory.getLogger(AppKafkaClient.class);
 
     public static Set<String> connect(BrokerConfig instance) throws ExecutionException, InterruptedException {
         String brokerUrl = instance.getBrokerUrl();
@@ -36,6 +37,8 @@ public class AppKafkaClient {
             Set<String> topics = AppKafkaClient.connect(BrokerConfig.getInstance());
             MessageBus.getInstance().publish(new ConnectedToBrokerMessage(BrokerConfig.getInstance().getBrokerUrl(), topics));
         } catch (Exception e) {
+            e.printStackTrace();
+            LOGGER.error("Error connect to kafka and populate tree: {}", e.getMessage());
             ErrorModal.showError("Error connecting to Kafka: " + e.getMessage());
         }
     }
@@ -207,13 +210,9 @@ public class AppKafkaClient {
                 do {
                     ConsumerRecords<String, Object> records = consumer.poll(Duration.ofMillis(500));
                     for (ConsumerRecord record : records) {
-                        String time = new SimpleDateFormat("HH:mm:ss").format(new Date(record.timestamp()));
-
-                        SwingUtilities.invokeLater(() -> {
-                            if (record.value() != null) {
-                                MessageBus.getInstance().publish(new RecordConsumed(time, record.key().toString(), record.value().toString()));
-                            }
-                        });
+                        if (record.value() != null) {
+                            MessageBus.getInstance().publish(new RecordConsumed(record));
+                        }
                     }
 
                 } while (isSubscribing);

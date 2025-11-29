@@ -7,7 +7,5 @@ public class RightView extends JTabbedPane {
         addTab("Data", new TopicProduceConsumePanel());
         addTab("Configs", new TopicConfigsPanel());
         addTab("Stats", new StatsPanel());
-
-        setSelectedIndex(2);
     }
 }
