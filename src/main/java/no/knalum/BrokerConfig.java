@@ -13,7 +13,6 @@ public class BrokerConfig extends Model {
 
     public static BrokerConfig getInstance() {
         if (instance == null) {
-            System.out.println("Broker Config created");
             instance = new BrokerConfig();
         }
         return instance;

@@ -32,7 +32,6 @@ public class TopicConfigsPanel extends JPanel implements MyListener {
                 if (c instanceof JPanel panel) {
                     JLabel name = (JLabel) Arrays.stream(panel.getComponents()).filter(c2 -> c2 instanceof JLabel).findAny().get();
                     JTextField txt = (JTextField) Arrays.stream(panel.getComponents()).filter(c2 -> c2 instanceof JTextField).findAny().get();
-                    System.out.println(name.getText() + " " + txt.getText());
                     updatedEntries.add(new ConfigEntry(name.getText(), txt.getText()));
                 }
             }

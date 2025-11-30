@@ -32,8 +32,6 @@ public class KafkaStatsClient {
 
         ConsumerStats consumerStats = findTsAndNumPartitions(topicName);
 
-        System.out.println(stats);
-
         return new TopicStats(
                 Long.parseLong(stats.get("size") == null ? "-1" : stats.get("size")),
                 Long.parseLong(stats.get("count") == null ? "-1" : stats.get("count")),

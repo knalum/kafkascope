@@ -17,6 +17,7 @@ public class LeftTree extends JPanel implements MyListener {
     private final DefaultMutableTreeNode root;
     private JTextField filter;
     private DefaultTreeModel originalModel;
+    private String selectedTopic;
 
     public LeftTree() {
         super(new BorderLayout());
@@ -29,7 +30,6 @@ public class LeftTree extends JPanel implements MyListener {
             @Override
             public void keyTyped(KeyEvent e) {
                 if (e.getKeyChar() == KeyEvent.VK_ENTER) {
-                    System.out.println("Filter: " + filter.getText());
                     tree.setModel(createFilteredTreeModel());
                     tree.updateUI();
                 }
@@ -82,9 +82,11 @@ public class LeftTree extends JPanel implements MyListener {
         return new DefaultTreeModel(filteredRoot);
     }
 
+    private AppKafkaClient client;
+
     class MySelectionListener implements TreeSelectionListener {
 
-        private AppKafkaClient client;
+        //private AppKafkaClient client;
 
         @Override
         public void valueChanged(TreeSelectionEvent e) {
@@ -95,9 +97,10 @@ public class LeftTree extends JPanel implements MyListener {
                 return;
             }
             Object lastPathComponent = e.getNewLeadSelectionPath().getLastPathComponent();
+            selectedTopic = (String) lastPathComponent.toString();
             MessageBus.getInstance().publish(new TreeTopicChanged(lastPathComponent.toString()));
-            this.client = new AppKafkaClient();
-            client.subscribeToKafkaTopic(BrokerConfig.getInstance().getBrokerUrl(), lastPathComponent.toString());
+            client = new AppKafkaClient();
+            client.subscribeToKafkaTopic(BrokerConfig.getInstance().getBrokerUrl(), lastPathComponent.toString(), SortPane.SortType.Oldest);
         }
     }
 
@@ -113,6 +116,13 @@ public class LeftTree extends JPanel implements MyListener {
             this.tree.setModel(originalModel);
             this.tree.expandRow(0);
             tree.updateUI();
+        } else if (message instanceof SortOrderChangedMessage sortOrderChangedMessage) {
+            MessageBus.getInstance().publish(new TreeTopicChanged(selectedTopic));
+            if (client != null) {
+                client.closeSubscribing();
+            }
+            client = new AppKafkaClient();
+            client.subscribeToKafkaTopic(BrokerConfig.getInstance().getBrokerUrl(), selectedTopic, sortOrderChangedMessage.getSortChoice());
         }
     }
 }

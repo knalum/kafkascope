@@ -1,12 +1,17 @@
 package no.knalum;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.swing.*;
 import java.awt.*;
+import java.util.Date;
 
 public class KafkaScope extends JFrame {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaScope.class);
+
     KafkaScope() {
-        System.out.println("Init MainApp");
         setJMenuBar(new FileMenuBar(this));
         add(new MainSplitPane());
         add(new StatusBar(), BorderLayout.SOUTH);
@@ -21,6 +26,7 @@ public class KafkaScope extends JFrame {
                 KafkaScope.super.getRootPane().requestFocusInWindow();
             }
         });
+        LOGGER.info("Kafka Scope started at " + new Date());
     }
 
 

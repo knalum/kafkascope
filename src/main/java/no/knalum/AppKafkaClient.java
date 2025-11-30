@@ -8,6 +8,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
@@ -63,8 +64,6 @@ public class AppKafkaClient {
         props.put("bootstrap.servers", brokerUrl);
         try (AdminClient adminClient = AdminClient.create(props)) {
             adminClient.deleteTopics(Collections.singletonList("output3")).all().get();
-            System.out.println("Deleded");
-
 
             Map<String, TopicDescription> descriptions = adminClient.describeTopics(Collections.singleton(topic)).all().get();
             TopicDescription desc = descriptions.get(topic);
@@ -84,7 +83,6 @@ public class AppKafkaClient {
         props.put("bootstrap.servers", brokerUrl);
         try (AdminClient adminClient = AdminClient.create(props)) {
             adminClient.createTopics(Collections.singletonList(new NewTopic(topic, 1, (short) 1)));
-            System.out.println("Created topic");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -175,7 +173,6 @@ public class AppKafkaClient {
                 total += (latest - earliest);
             }
 
-            System.out.println("Messages in topic: " + total);
             return total;
         } catch (Exception e) {
             ErrorModal.showError("Error getting topic stats: " + e.getMessage());
@@ -187,10 +184,7 @@ public class AppKafkaClient {
         isSubscribing = false;
     }
 
-    public void subscribeToKafkaTopic(String broker, String topic) {
-        String value_deser = "N/A";
-        System.out.println("Subscribing to topic " + topic + " using " + value_deser);
-
+    public void subscribeToKafkaTopic(String broker, String topic, SortPane.SortType sortChoice) {
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, broker);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
@@ -198,11 +192,26 @@ public class AppKafkaClient {
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, CustomValueDeserializer.class);
         props.put("schema.registry.url", BrokerConfig.getInstance().getSchemaRegistryUrl());
         //    props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, SpecificAvroSerde::class.java)
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
 
         KafkaConsumer consumer = new KafkaConsumer<>(props);
-        consumer.subscribe(Collections.singletonList(topic));
+        List<PartitionInfo> partitionInfos = consumer.partitionsFor(topic);
+
+        List<TopicPartition> partitions = new ArrayList<>();
+        for (PartitionInfo p : partitionInfos) {
+            partitions.add(new TopicPartition(topic, p.partition()));
+        }
+        consumer.assign(partitions);
+
+        if (sortChoice == SortPane.SortType.Oldest) {
+            consumer.seekToBeginning(partitions);
+        } else {
+            consumer.seekToEnd(partitions);
+            for (TopicPartition tp : partitions) {
+                long latestOffset = consumer.position(tp);
+                consumer.seek(tp, latestOffset - 20);
+            }
+        }
 
         new Thread(() -> {
             try {
@@ -220,7 +229,6 @@ public class AppKafkaClient {
                 ex.printStackTrace();
             } finally {
                 consumer.close();
-                System.out.println("Closed sub thread " + topic);
             }
         }).start();
     }

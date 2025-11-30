@@ -26,9 +26,10 @@ public class MessageTable extends JPanel implements MyListener {
         table.setCellSelectionEnabled(true);
         table.setRowSelectionAllowed(true);
         table.setColumnSelectionAllowed(true);
-        setColumnWidths(table, 20, 10, 10, 10, 10, 80);
+        setColumnWidths(table, 25, 10, 10, 10, 10, 80);
 
         JScrollPane scrollPane = new JScrollPane(table);
+        add(new SortPane(), BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
 
         MessageBus.getInstance().subscribe(this);
@@ -46,19 +47,24 @@ public class MessageTable extends JPanel implements MyListener {
     @Override
     public void handleMessage(AppMessage message) {
         if (message instanceof RecordConsumed recordMessage) {
-            String time = new SimpleDateFormat("HH:mm:ss").format(new Date(recordMessage.record().timestamp()));
+            String time = new SimpleDateFormat("dd.MM.yyy HH:mm:ss").format(new Date(recordMessage.record().timestamp()));
             String headersString = StreamSupport.stream(recordMessage.record().headers().spliterator(), false)
                     .map(h -> "\"" + h.key() + "\":\"" +
                             new String(h.value(), StandardCharsets.UTF_8) + "\"")
                     .collect(Collectors.joining(", ", "{", "}"));
 
-            ((DefaultTableModel) table.getModel()).insertRow(0, new Object[]{
+            Object[] newRow = {
                     time,
                     recordMessage.record().key(),
                     recordMessage.record().offset(),
                     recordMessage.record().partition(),
                     headersString,
-                    recordMessage.record().value()});
+                    recordMessage.record().value()};
+            if (SortPane.sortChoice.getSelectedItem() == SortPane.SortType.Oldest) {
+                ((DefaultTableModel) table.getModel()).addRow(newRow);
+            } else {
+                ((DefaultTableModel) table.getModel()).insertRow(0, newRow);
+            }
         } else if (message instanceof TreeTopicChanged treeTopicChanged) {
             ((DefaultTableModel) table.getModel()).setRowCount(0);
             this.selectedTopic = treeTopicChanged.topic();
