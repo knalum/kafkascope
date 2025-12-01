@@ -24,15 +24,13 @@ public class StatsPanel extends JPanel implements MyListener {
         setLayout(new BorderLayout());
         this.configPanel = new JPanel();
         configPanel.setLayout(new BoxLayout(configPanel, BoxLayout.Y_AXIS));
-        configPanel.add(createRow("Count", "B"));
-
         add(configPanel);
         MessageBus.getInstance().subscribe(this);
 
-        configPanel.add(this.countField = createRow("Count", ""));
-        configPanel.add(this.sizeField = createRow("Size", ""));
-        configPanel.add(this.partitionsField = createRow("Partitions", ""));
-        configPanel.add(this.recordField = createRow("Last record", ""));
+        configPanel.add(this.countField = createRow("Count", "", false));
+        configPanel.add(this.sizeField = createRow("Size", "", false));
+        configPanel.add(this.partitionsField = createRow("Partitions", "", false));
+        configPanel.add(this.recordField = createRow("Last record", "", false));
 
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(
                 () -> {
