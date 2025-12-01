@@ -1,5 +1,6 @@
 package no.knalum;
 
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.jdesktop.swingx.prompt.PromptSupport;
 
 import javax.swing.*;
@@ -11,6 +12,7 @@ import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.List;
 
 public class LeftTree extends JPanel implements MyListener {
     private final JTree tree;
@@ -18,6 +20,8 @@ public class LeftTree extends JPanel implements MyListener {
     private JTextField filter;
     private DefaultTreeModel originalModel;
     private String selectedTopic;
+    private SortPane.SortType sortChoice = SortPane.SortType.Oldest;
+    public static int page = 0;
 
     public LeftTree() {
         super(new BorderLayout());
@@ -100,7 +104,7 @@ public class LeftTree extends JPanel implements MyListener {
             selectedTopic = (String) lastPathComponent.toString();
             MessageBus.getInstance().publish(new TreeTopicChanged(lastPathComponent.toString()));
             client = new AppKafkaClient();
-            client.subscribeToKafkaTopic(BrokerConfig.getInstance().getBrokerUrl(), lastPathComponent.toString(), SortPane.SortType.Oldest);
+            client.subscribeToKafkaTopic(BrokerConfig.getInstance().getBrokerUrl(), lastPathComponent.toString(), SortPane.SortType.Oldest, page);
         }
     }
 
@@ -122,7 +126,28 @@ public class LeftTree extends JPanel implements MyListener {
                 client.closeSubscribing();
             }
             client = new AppKafkaClient();
-            client.subscribeToKafkaTopic(BrokerConfig.getInstance().getBrokerUrl(), selectedTopic, sortOrderChangedMessage.getSortChoice());
+            this.sortChoice = sortOrderChangedMessage.getSortChoice();
+            List<ConsumerRecord<String, Object>> records = client.getRecords(BrokerConfig.getInstance().getBrokerUrl(), selectedTopic, sortChoice, page);
+            records.stream().forEach(record -> {
+                MessageBus.getInstance().publish(new RecordConsumed(record));
+            });
+
+        } else if (message instanceof NextPageMessage) {
+            if (client != null) {
+                client.closeSubscribing();
+            }
+            client = new AppKafkaClient();
+            page += 1;
+            List<ConsumerRecord<String, Object>> records = client.getRecords(BrokerConfig.getInstance().getBrokerUrl(), selectedTopic, sortChoice, page);
+            MessageBus.getInstance().publish(new RecordsFetched(records));
+        } else if (message instanceof PrevPageMessage) {
+            if (client != null) {
+                client.closeSubscribing();
+            }
+            client = new AppKafkaClient();
+            page = Math.max(0, page - 1);
+            List<ConsumerRecord<String, Object>> records = client.getRecords(BrokerConfig.getInstance().getBrokerUrl(), selectedTopic, sortChoice, page);
+            MessageBus.getInstance().publish(new RecordsFetched(records));
         }
     }
 }

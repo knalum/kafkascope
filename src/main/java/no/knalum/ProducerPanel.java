@@ -31,7 +31,11 @@ public class ProducerPanel extends JPanel implements MyListener {
         PromptSupport.setPrompt("Key", keyField);
 
 
-        jPanel.add(new JButton("Send"));
+        jPanel.add(new JButton("Send") {{
+            addActionListener(e -> {
+                AppKafkaClient.sendMessageToBroker(selectedTopic, keyField.getText(), recordValue.getText());
+            });
+        }});
 
         return jPanel;
     }
@@ -50,16 +54,6 @@ public class ProducerPanel extends JPanel implements MyListener {
         jPanel.add(sp);
 
 
-        return jPanel;
-    }
-
-    private JPanel createSendPanel() {
-        JPanel jPanel = new JPanel(new BorderLayout());
-        jPanel.add(new JButton("Send") {{
-            addActionListener(e -> {
-                AppKafkaClient.sendMessageToBroker(selectedTopic, keyField.getText(), recordValue.getText());
-            });
-        }}, BorderLayout.EAST);
         return jPanel;
     }
 

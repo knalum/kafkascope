@@ -35,7 +35,6 @@ public class StatsPanel extends JPanel implements MyListener {
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(
                 () -> {
                     if (selectedTopic != null) {
-                        LOGGER.info("Get stats");
                         getStats(selectedTopic);
                     }
                 },

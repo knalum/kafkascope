@@ -41,6 +41,20 @@ public class MessageTableValueDialog extends MouseAdapter {
                         UserSettingsConfig.setMessageModalDimensions(size);
                     }
                 });
+                dialog.addKeyListener(new java.awt.event.KeyAdapter() {
+                    @Override
+                    public void keyPressed(java.awt.event.KeyEvent e) {
+                        if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ESCAPE) {
+                            dialog.dispose();
+                        }
+                    }
+                });
+                // Register ESC key to close dialog even if not focused
+                dialog.getRootPane().registerKeyboardAction(e1 -> dialog.dispose(),
+                        KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
+                        JComponent.WHEN_IN_FOCUSED_WINDOW);
+                dialog.setFocusable(true);
+                dialog.setFocusTraversalKeysEnabled(false);
                 dialog.setVisible(true);
             }
         }

@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class AppKafkaClient {
 
@@ -184,7 +185,47 @@ public class AppKafkaClient {
         isSubscribing = false;
     }
 
-    public void subscribeToKafkaTopic(String broker, String topic, SortPane.SortType sortChoice) {
+    public List<ConsumerRecord<String, Object>> getRecords(String broker, String topic, SortPane.SortType sortChoice, int page) {
+        List<ConsumerRecord<String, Object>> result = new ArrayList<>();
+        Properties props = new Properties();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, broker);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, CustomValueDeserializer.class);
+        props.put("schema.registry.url", BrokerConfig.getInstance().getSchemaRegistryUrl());
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 100);
+        try (KafkaConsumer<String, Object> consumer = new KafkaConsumer<>(props)) {
+            List<PartitionInfo> partitionInfos = consumer.partitionsFor(topic);
+            if (partitionInfos == null || partitionInfos.isEmpty()) return result;
+            List<TopicPartition> partitions = new ArrayList<>();
+            for (PartitionInfo p : partitionInfos) {
+                partitions.add(new TopicPartition(topic, p.partition()));
+            }
+            consumer.assign(partitions);
+            if (sortChoice == SortPane.SortType.Oldest) {
+                for (TopicPartition tp : partitions) {
+                    consumer.seek(tp, page * 100L);
+                }
+            } else {
+                consumer.seekToEnd(partitions);
+                for (TopicPartition tp : partitions) {
+                    long latestOffset = consumer.position(tp);
+                    consumer.seek(tp, Math.max(0, latestOffset - 100));
+                }
+            }
+            ConsumerRecords<String, Object> records = consumer.poll(Duration.ofSeconds(2));
+            for (ConsumerRecord<String, Object> record : records) {
+                result.add(record);
+                if (result.size() >= 100) break;
+            }
+        } catch (Exception e) {
+            LOGGER.error("Error fetching records: {}", e.getMessage());
+        }
+        return result;
+    }
+
+    public void subscribeToKafkaTopic(String broker, String topic, SortPane.SortType sortChoice, int page) {
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, broker);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
@@ -194,6 +235,9 @@ public class AppKafkaClient {
         //    props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, SpecificAvroSerde::class.java)
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
 
+        if (sortChoice == SortPane.SortType.Oldest) {
+            props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 100);
+        }
         KafkaConsumer consumer = new KafkaConsumer<>(props);
         List<PartitionInfo> partitionInfos = consumer.partitionsFor(topic);
 
@@ -204,32 +248,54 @@ public class AppKafkaClient {
         consumer.assign(partitions);
 
         if (sortChoice == SortPane.SortType.Oldest) {
-            consumer.seekToBeginning(partitions);
+            for (TopicPartition tp : partitions) {
+                consumer.seek(tp, page * 100L);
+            }
+
+            AtomicInteger i = new AtomicInteger();
+            new Thread(() -> {
+                try {
+                    isSubscribing = true;
+                    do {
+                        ConsumerRecords<String, Object> records = consumer.poll(Duration.ofSeconds(1));
+                        i.addAndGet(records.count());
+                        for (ConsumerRecord record : records) {
+                            MessageBus.getInstance().publish(new RecordConsumed(record));
+                        }
+
+                    } while (isSubscribing && i.get() < 100);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                } finally {
+                    consumer.close();
+                }
+            }).start();
+
         } else {
             consumer.seekToEnd(partitions);
             for (TopicPartition tp : partitions) {
                 long latestOffset = consumer.position(tp);
-                consumer.seek(tp, Math.max(0, latestOffset - 20));
+                consumer.seek(tp, Math.max(0, latestOffset - 100));
             }
-        }
 
-        new Thread(() -> {
-            try {
-                isSubscribing = true;
-                do {
-                    ConsumerRecords<String, Object> records = consumer.poll(Duration.ofMillis(500));
-                    for (ConsumerRecord record : records) {
-                        if (record.value() != null) {
+            new Thread(() -> {
+                try {
+                    isSubscribing = true;
+                    do {
+                        ConsumerRecords<String, Object> records = consumer.poll(Duration.ofSeconds(1));
+                        for (ConsumerRecord record : records) {
                             MessageBus.getInstance().publish(new RecordConsumed(record));
                         }
-                    }
 
-                } while (isSubscribing);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            } finally {
-                consumer.close();
-            }
-        }).start();
+                    } while (isSubscribing);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                } finally {
+                    consumer.close();
+                }
+            }).start();
+        }
+
+
     }
 }

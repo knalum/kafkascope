@@ -26,7 +26,7 @@ public class MessageTable extends JPanel implements MyListener {
         table.setCellSelectionEnabled(true);
         table.setRowSelectionAllowed(true);
         table.setColumnSelectionAllowed(true);
-        setColumnWidths(table, 25, 10, 10, 10, 10, 80);
+        setColumnWidths(table, 30, 10, 10, 10, 10, 80);
 
         table.addMouseListener(new MessageTableValueDialog(table));
         JScrollPane scrollPane = new JScrollPane(table);
@@ -48,7 +48,7 @@ public class MessageTable extends JPanel implements MyListener {
     @Override
     public void handleMessage(AppMessage message) {
         if (message instanceof RecordConsumed recordMessage) {
-            String time = new SimpleDateFormat("dd.MM.yyy HH:mm:ss").format(new Date(recordMessage.record().timestamp()));
+            String time = new SimpleDateFormat("dd.MM.yyy HH:mm:ss:sss").format(new Date(recordMessage.record().timestamp()));
             String headersString = StreamSupport.stream(recordMessage.record().headers().spliterator(), false)
                     .map(h -> "\"" + h.key() + "\":\"" +
                             new String(h.value(), StandardCharsets.UTF_8) + "\"")
@@ -63,12 +63,37 @@ public class MessageTable extends JPanel implements MyListener {
                     recordMessage.record().value()};
             if (SortPane.sortChoice.getSelectedItem() == SortPane.SortType.Oldest) {
                 ((DefaultTableModel) table.getModel()).addRow(newRow);
+                if (table.getRowCount() > 100) {
+                    //table.remove(0);
+                }
             } else {
                 ((DefaultTableModel) table.getModel()).insertRow(0, newRow);
+                if (table.getModel().getRowCount() > 100) {
+                    ((DefaultTableModel) table.getModel()).removeRow(table.getModel().getRowCount() - 1);
+                }
             }
         } else if (message instanceof TreeTopicChanged treeTopicChanged) {
             ((DefaultTableModel) table.getModel()).setRowCount(0);
             this.selectedTopic = treeTopicChanged.topic();
+        } else if (message instanceof RecordsFetched recordsFetched) {
+            ((DefaultTableModel) table.getModel()).setRowCount(0);
+            recordsFetched.getRecord().forEach(record -> {
+                String time = new SimpleDateFormat("dd.MM.yyy HH:mm:ss:sss").format(new Date(record.timestamp()));
+                String headersString = StreamSupport.stream(record.headers().spliterator(), false)
+                        .map(h -> "\"" + h.key() + "\":\"" +
+                                new String(h.value(), StandardCharsets.UTF_8) + "\"")
+                        .collect(Collectors.joining(", ", "{", "}"));
+
+                Object[] newRow = {
+                        time,
+                        record.key(),
+                        record.offset(),
+                        record.partition(),
+                        headersString,
+                        record.value()};
+                ((DefaultTableModel) table.getModel()).addRow(newRow);
+            });
+
         }
     }
 
