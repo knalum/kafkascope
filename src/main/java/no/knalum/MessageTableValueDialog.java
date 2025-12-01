@@ -1,5 +1,9 @@
 package no.knalum;
 
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+import org.fife.ui.rtextarea.RTextScrollPane;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -19,11 +23,24 @@ public class MessageTableValueDialog extends MouseAdapter {
             if (col == table.getColumnCount() - 1 && row != -1) {
                 Object value = table.getValueAt(row, col);
                 JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(table), "Value", true);
-                JTextArea textArea = new JTextArea(value != null ? value.toString() : "");
+
+                RSyntaxTextArea textArea = new RSyntaxTextArea(20, 60);
                 textArea.setEditable(false);
-                dialog.add(new JScrollPane(textArea));
-                dialog.setSize(500, 300);
+                textArea.setText(value != null ? value.toString() : "");
+                textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JSON);
+                textArea.setCodeFoldingEnabled(true);
+                RTextScrollPane sp = new RTextScrollPane(textArea);
+
+                dialog.add(sp);
+                dialog.setSize(UserSettingsConfig.getMessageModalDimensions());
                 dialog.setLocationRelativeTo(null);
+                dialog.addComponentListener(new java.awt.event.ComponentAdapter() {
+                    @Override
+                    public void componentResized(java.awt.event.ComponentEvent e) {
+                        Dimension size = dialog.getSize();
+                        UserSettingsConfig.setMessageModalDimensions(size);
+                    }
+                });
                 dialog.setVisible(true);
             }
         }

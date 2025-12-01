@@ -1,12 +1,15 @@
 package no.knalum;
 
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+import org.fife.ui.rtextarea.RTextScrollPane;
 import org.jdesktop.swingx.prompt.PromptSupport;
 
 import javax.swing.*;
 import java.awt.*;
 
 public class ProducerPanel extends JPanel implements MyListener {
-    private JTextArea recordValue;
+    private RSyntaxTextArea recordValue;
     private String selectedTopic;
     private JTextField keyField;
 
@@ -27,9 +30,14 @@ public class ProducerPanel extends JPanel implements MyListener {
         }});
         PromptSupport.setPrompt("Key", keyField);
 
-        this.recordValue = new JTextArea("");
+        recordValue = new RSyntaxTextArea(4, 60);
         PromptSupport.setPrompt("Value", this.recordValue);
-        jPanel.add(new JScrollPane(recordValue));
+        recordValue.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JSON);
+        recordValue.setCodeFoldingEnabled(true);
+
+        RTextScrollPane sp = new RTextScrollPane(recordValue);
+
+        jPanel.add(sp);
 
 
         return jPanel;
