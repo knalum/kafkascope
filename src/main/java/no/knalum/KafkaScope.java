@@ -19,13 +19,6 @@ public class KafkaScope extends JFrame {
         if (!BrokerConfig.getInstance().getBrokerUrl().isEmpty()) {
             AppKafkaClient.connectToKafkaAndPopulateTree();
         }
-
-        addWindowListener(new java.awt.event.WindowAdapter() {
-            @Override
-            public void windowOpened(java.awt.event.WindowEvent e) {
-                KafkaScope.super.getRootPane().requestFocusInWindow();
-            }
-        });
         LOGGER.info("Kafka Scope started at " + new Date());
     }
 
@@ -33,7 +26,6 @@ public class KafkaScope extends JFrame {
     public static void main(String[] args) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         setDockIcon();
         UIManager.setLookAndFeel("com.formdev.flatlaf.themes.FlatMacLightLaf");
-        RepaintManager.currentManager(null).setDoubleBufferingEnabled(true);
 
         KafkaScope kafkaScope = new KafkaScope();
         kafkaScope.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);

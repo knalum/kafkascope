@@ -16,19 +16,29 @@ public class ProducerPanel extends JPanel implements MyListener {
     public ProducerPanel() {
         setLayout(new BorderLayout());
 
-        add(createKeyValuePanel(), BorderLayout.CENTER);
-        add(createSendPanel(), BorderLayout.SOUTH);
+        add(createKeySendPanel(), BorderLayout.NORTH);
+        add(createValuePanel(), BorderLayout.CENTER);
 
         MessageBus.getInstance().subscribe(this);
     }
 
-    private JPanel createKeyValuePanel() {
+    private JPanel createKeySendPanel() {
         JPanel jPanel = new JPanel();
-        jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.Y_AXIS));
+        jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.X_AXIS));
         jPanel.add(this.keyField = new JTextField() {{
-            setMaximumSize(new Dimension(2000, 20));
+            setMaximumSize(new Dimension(2000, 25));
         }});
         PromptSupport.setPrompt("Key", keyField);
+
+
+        jPanel.add(new JButton("Send"));
+
+        return jPanel;
+    }
+
+    private JPanel createValuePanel() {
+        JPanel jPanel = new JPanel();
+        jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.Y_AXIS));
 
         recordValue = new RSyntaxTextArea(4, 60);
         PromptSupport.setPrompt("Value", this.recordValue);
