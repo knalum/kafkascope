@@ -209,7 +209,7 @@ public class AppKafkaClient {
             consumer.seekToEnd(partitions);
             for (TopicPartition tp : partitions) {
                 long latestOffset = consumer.position(tp);
-                consumer.seek(tp, latestOffset - 20);
+                consumer.seek(tp, Math.max(0, latestOffset - 20));
             }
         }
 
