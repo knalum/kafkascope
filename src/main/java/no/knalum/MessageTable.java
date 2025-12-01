@@ -28,6 +28,7 @@ public class MessageTable extends JPanel implements MyListener {
         table.setColumnSelectionAllowed(true);
         setColumnWidths(table, 25, 10, 10, 10, 10, 80);
 
+        table.addMouseListener(new MessageTableValueDialog(table));
         JScrollPane scrollPane = new JScrollPane(table);
         add(new SortPane(), BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
