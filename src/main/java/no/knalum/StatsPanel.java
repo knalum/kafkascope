@@ -58,7 +58,7 @@ public class StatsPanel extends JPanel implements MyListener {
 
 
     private void getStats(String selectedTopic) {
-        AppKafkaClient.getTopicStats(selectedTopic);
+        AppKafkaClient.getNumRecords(selectedTopic);
         try {
             KafkaStatsClient.TopicStats topicStats = new KafkaStatsClient().getTopicStats(selectedTopic);
             populateStatsPanel(topicStats);

@@ -1,6 +1,5 @@
 package no.knalum;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.jdesktop.swingx.prompt.PromptSupport;
 
 import javax.swing.*;
@@ -12,7 +11,6 @@ import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.util.List;
 
 public class LeftTree extends JPanel implements MyListener {
     private final JTree tree;
@@ -86,25 +84,12 @@ public class LeftTree extends JPanel implements MyListener {
         return new DefaultTreeModel(filteredRoot);
     }
 
-    private AppKafkaClient client;
-
     class MySelectionListener implements TreeSelectionListener {
-
-        //private AppKafkaClient client;
-
         @Override
         public void valueChanged(TreeSelectionEvent e) {
-            if (client != null) {
-                client.closeSubscribing();
-            }
-            if (e.getNewLeadSelectionPath() == null) {
-                return;
-            }
             Object lastPathComponent = e.getNewLeadSelectionPath().getLastPathComponent();
-            selectedTopic = (String) lastPathComponent.toString();
-            MessageBus.getInstance().publish(new TreeTopicChanged(lastPathComponent.toString()));
-            client = new AppKafkaClient();
-            client.subscribeToKafkaTopic(BrokerConfig.getInstance().getBrokerUrl(), lastPathComponent.toString(), SortPane.SortType.Oldest, page);
+            selectedTopic = lastPathComponent.toString();
+            MessageBus.getInstance().publish(new TreeTopicChanged(selectedTopic));
         }
     }
 
@@ -120,7 +105,9 @@ public class LeftTree extends JPanel implements MyListener {
             this.tree.setModel(originalModel);
             this.tree.expandRow(0);
             tree.updateUI();
-        } else if (message instanceof SortOrderChangedMessage sortOrderChangedMessage) {
+        }
+        /*
+        else if (message instanceof SortOrderChangedMessage sortOrderChangedMessage) {
             MessageBus.getInstance().publish(new TreeTopicChanged(selectedTopic));
             if (client != null) {
                 client.closeSubscribing();
@@ -148,6 +135,6 @@ public class LeftTree extends JPanel implements MyListener {
             page = Math.max(0, page - 1);
             List<ConsumerRecord<String, Object>> records = client.getRecords(BrokerConfig.getInstance().getBrokerUrl(), selectedTopic, sortChoice, page);
             MessageBus.getInstance().publish(new RecordsFetched(records));
-        }
+        }*/
     }
 }

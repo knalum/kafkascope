@@ -149,7 +149,7 @@ public class AppKafkaClient {
         }
     }
 
-    public static long getTopicStats(String selectedTopic) {
+    public static long getNumRecords(String selectedTopic) {
         Properties props = new Properties();
         props.put("bootstrap.servers", BrokerConfig.getInstance().getBrokerUrl());
         try (AdminClient admin = AdminClient.create(props)) {
@@ -185,45 +185,6 @@ public class AppKafkaClient {
         isSubscribing = false;
     }
 
-    public List<ConsumerRecord<String, Object>> getRecords(String broker, String topic, SortPane.SortType sortChoice, int page) {
-        List<ConsumerRecord<String, Object>> result = new ArrayList<>();
-        Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, broker);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, CustomValueDeserializer.class);
-        props.put("schema.registry.url", BrokerConfig.getInstance().getSchemaRegistryUrl());
-        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 100);
-        try (KafkaConsumer<String, Object> consumer = new KafkaConsumer<>(props)) {
-            List<PartitionInfo> partitionInfos = consumer.partitionsFor(topic);
-            if (partitionInfos == null || partitionInfos.isEmpty()) return result;
-            List<TopicPartition> partitions = new ArrayList<>();
-            for (PartitionInfo p : partitionInfos) {
-                partitions.add(new TopicPartition(topic, p.partition()));
-            }
-            consumer.assign(partitions);
-            if (sortChoice == SortPane.SortType.Oldest) {
-                for (TopicPartition tp : partitions) {
-                    consumer.seek(tp, page * 100L);
-                }
-            } else {
-                consumer.seekToEnd(partitions);
-                for (TopicPartition tp : partitions) {
-                    long latestOffset = consumer.position(tp);
-                    consumer.seek(tp, Math.max(0, latestOffset - 100));
-                }
-            }
-            ConsumerRecords<String, Object> records = consumer.poll(Duration.ofSeconds(2));
-            for (ConsumerRecord<String, Object> record : records) {
-                result.add(record);
-                if (result.size() >= 100) break;
-            }
-        } catch (Exception e) {
-            LOGGER.error("Error fetching records: {}", e.getMessage());
-        }
-        return result;
-    }
 
     public void subscribeToKafkaTopic(String broker, String topic, SortPane.SortType sortChoice, int page) {
         Properties props = new Properties();
