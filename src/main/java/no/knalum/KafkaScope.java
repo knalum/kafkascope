@@ -26,6 +26,7 @@ public class KafkaScope extends JFrame {
     public static void main(String[] args) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         setDockIcon();
         UIManager.setLookAndFeel("com.formdev.flatlaf.themes.FlatMacLightLaf");
+        GlobalTextPopupInstaller.install();
 
         KafkaScope kafkaScope = new KafkaScope();
         kafkaScope.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
