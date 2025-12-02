@@ -4,6 +4,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 
@@ -12,9 +13,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public class AppKafkaMessageTableClient {
     static Properties props = new Properties();
+    boolean isSubscribing = false;
+    private Thread consumerThread;
 
     static {
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BrokerConfig.getInstance().getBrokerUrl());
@@ -48,12 +52,11 @@ public class AppKafkaMessageTableClient {
             }
             consumer.assign(partitions);
             if (sortChoice == SortPane.SortType.Oldest) {
-
                 for (TopicPartition tp : partitions) {
                     consumer.seek(tp, currentPage * 100L);
                 }
-
             } else {
+                // Newest
                 consumer.seekToEnd(partitions);
                 for (TopicPartition tp : partitions) {
                     long latestOffset = consumer.position(tp);
@@ -69,5 +72,41 @@ public class AppKafkaMessageTableClient {
 
             return result;
         }
+    }
+
+
+    public void subscribe(String selectedTopic, Consumer<ConsumerRecords<String, Object>> o) {
+        // Cancel any existing consumer thread
+        if (consumerThread != null && consumerThread.isAlive()) {
+            consumerThread.interrupt();
+            try {
+                consumerThread.join(1000); // Wait up to 1s for clean shutdown
+            } catch (InterruptedException ignored) {
+            }
+        }
+        consumerThread = new Thread(() -> {
+            Properties threadProps = new Properties();
+            threadProps.putAll(props);
+            threadProps.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
+            try (KafkaConsumer<String, Object> consumer = new KafkaConsumer<>(threadProps)) {
+                isSubscribing = true;
+                consumer.subscribe(List.of(selectedTopic));
+                boolean firstPoll = true;
+                while (!Thread.currentThread().isInterrupted()) {
+                    ConsumerRecords<String, Object> records = consumer.poll(Duration.ofMillis(500));
+                    if (firstPoll) {
+                        consumer.assignment().forEach(tp -> consumer.seekToEnd(List.of(tp)));
+                        firstPoll = false;
+                        continue;
+                    }
+                    if (!records.isEmpty()) {
+                        o.accept(records);
+                    }
+                }
+            } catch (KafkaException e) {
+                //e.printStackTrace();
+            }
+        }, "KafkaTailConsumerThread-" + selectedTopic);
+        consumerThread.start();
     }
 }

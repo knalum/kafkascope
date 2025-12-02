@@ -106,35 +106,5 @@ public class LeftTree extends JPanel implements MyListener {
             this.tree.expandRow(0);
             tree.updateUI();
         }
-        /*
-        else if (message instanceof SortOrderChangedMessage sortOrderChangedMessage) {
-            MessageBus.getInstance().publish(new TreeTopicChanged(selectedTopic));
-            if (client != null) {
-                client.closeSubscribing();
-            }
-            client = new AppKafkaClient();
-            this.sortChoice = sortOrderChangedMessage.getSortChoice();
-            List<ConsumerRecord<String, Object>> records = client.getRecords(BrokerConfig.getInstance().getBrokerUrl(), selectedTopic, sortChoice, page);
-            records.stream().forEach(record -> {
-                MessageBus.getInstance().publish(new RecordConsumed(record));
-            });
-
-        } else if (message instanceof NextPageMessage) {
-            if (client != null) {
-                client.closeSubscribing();
-            }
-            client = new AppKafkaClient();
-            page += 1;
-            List<ConsumerRecord<String, Object>> records = client.getRecords(BrokerConfig.getInstance().getBrokerUrl(), selectedTopic, sortChoice, page);
-            MessageBus.getInstance().publish(new RecordsFetched(records));
-        } else if (message instanceof PrevPageMessage) {
-            if (client != null) {
-                client.closeSubscribing();
-            }
-            client = new AppKafkaClient();
-            page = Math.max(0, page - 1);
-            List<ConsumerRecord<String, Object>> records = client.getRecords(BrokerConfig.getInstance().getBrokerUrl(), selectedTopic, sortChoice, page);
-            MessageBus.getInstance().publish(new RecordsFetched(records));
-        }*/
     }
 }

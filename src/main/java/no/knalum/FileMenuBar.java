@@ -1,7 +1,6 @@
 package no.knalum;
 
 import javax.swing.*;
-import java.awt.*;
 import java.util.UUID;
 
 public class FileMenuBar extends JMenuBar {
@@ -14,7 +13,15 @@ public class FileMenuBar extends JMenuBar {
         settingsItem.addActionListener(e -> new ConfigDialog(kafkaScope));
 
         JMenuItem closeItem = new JMenuItem("Close");
-        closeItem.addActionListener(e -> System.exit(0));
+        closeItem.addActionListener(e -> {
+            new SwingWorker<>() {
+                @Override
+                protected Object doInBackground() throws Exception {
+                    System.exit(0);
+                    return null;
+                }
+            }.execute();
+        });
         menu.add(closeItem);
 
         add(menu);

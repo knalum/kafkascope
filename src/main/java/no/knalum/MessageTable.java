@@ -1,6 +1,7 @@
 package no.knalum;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -54,8 +55,8 @@ public class MessageTable extends JPanel implements MyListener {
         if (message instanceof TreeTopicChanged treeTopicChanged) {
             ((DefaultTableModel) table.getModel()).setRowCount(0);
             this.selectedTopic = treeTopicChanged.topic();
-            List<ConsumerRecord<String, Object>> records = AppKafkaMessageTableClient.getInstance().getRecords(selectedTopic, (SortPane.SortType) SortPane.sortChoice.getSelectedItem(), currentPage);
-            setTableRecords(records);
+
+            subscribeOrGetFromKafka();
         } else if (message instanceof NextPageMessage) {
             if (selectedTopic == null) {
                 return;
@@ -66,43 +67,60 @@ public class MessageTable extends JPanel implements MyListener {
                 return;
             }
             currentPage++;
-            System.out.println("Current page " + currentPage);
-            List<ConsumerRecord<String, Object>> records = AppKafkaMessageTableClient.getInstance().getRecords(selectedTopic, (SortPane.SortType) SortPane.sortChoice.getSelectedItem(), currentPage);
-            setTableRecords(records);
+
+            subscribeOrGetFromKafka();
         } else if (message instanceof PrevPageMessage) {
             if (selectedTopic == null) {
                 return;
             }
             currentPage = Math.max(0, currentPage - 1);
-            System.out.println("Current page " + currentPage);
-            List<ConsumerRecord<String, Object>> records = AppKafkaMessageTableClient.getInstance().getRecords(selectedTopic, (SortPane.SortType) SortPane.sortChoice.getSelectedItem(), currentPage);
-            setTableRecords(records);
+
+            subscribeOrGetFromKafka();
         } else if (message instanceof SortOrderChangedMessage) {
             if (selectedTopic == null) {
                 return;
             }
-            List<ConsumerRecord<String, Object>> records = AppKafkaMessageTableClient.getInstance().getRecords(selectedTopic, (SortPane.SortType) SortPane.sortChoice.getSelectedItem(), currentPage);
-            setTableRecords(records);
+            subscribeOrGetFromKafka();
         }
+    }
+
+    private void subscribeOrGetFromKafka() {
+        new SwingWorker<Void, Void>() {
+
+            @Override
+            protected Void doInBackground() throws Exception {
+                if (SortPane.getSortChoice() == SortPane.SortType.Tail) {
+                    DefaultTableModel model = (DefaultTableModel) table.getModel();
+                    model.setRowCount(0);
+                    AppKafkaMessageTableClient.getInstance().subscribe(selectedTopic, (ConsumerRecords<String, Object> o) -> {
+                        for (ConsumerRecord<String, Object> record : o) {
+                            model.insertRow(0, recordToObjectRow(record));
+                        }
+                    });
+                } else {
+                    List<ConsumerRecord<String, Object>> records = AppKafkaMessageTableClient.getInstance().getRecords(selectedTopic, (SortPane.SortType) SortPane.sortChoice.getSelectedItem(), currentPage);
+                    setTableRecords(records);
+
+
+                    if (SortPane.getSortChoice() == SortPane.SortType.Newest) {
+                        DefaultTableModel model = (DefaultTableModel) table.getModel();
+                        AppKafkaMessageTableClient.getInstance().subscribe(selectedTopic, (ConsumerRecords<String, Object> o) -> {
+                            for (ConsumerRecord<String, Object> record : o) {
+                                model.insertRow(0, recordToObjectRow(record));
+                            }
+                        });
+                    }
+                }
+                return null;
+            }
+        }.execute();
     }
 
     private void setTableRecords(List<ConsumerRecord<String, Object>> records) {
         DefaultTableModel model = (DefaultTableModel) table.getModel();
         model.setRowCount(0);
         records.forEach(record -> {
-            String time = new SimpleDateFormat("dd.MM.yyy HH:mm:ss:sss").format(new Date(record.timestamp()));
-            String headersString = StreamSupport.stream(record.headers().spliterator(), false)
-                    .map(h -> "\"" + h.key() + "\":\"" +
-                            new String(h.value(), StandardCharsets.UTF_8) + "\"")
-                    .collect(Collectors.joining(", ", "{", "}"));
-
-            Object[] newRow = {
-                    time,
-                    record.key(),
-                    record.offset(),
-                    record.partition(),
-                    headersString,
-                    record.value()};
+            Object[] newRow = recordToObjectRow(record);
             if (SortPane.sortChoice.getSelectedItem() == SortPane.SortType.Oldest) {
                 model.addRow(newRow);
             } else {
@@ -110,6 +128,23 @@ public class MessageTable extends JPanel implements MyListener {
             }
         });
 
+    }
+
+    private static Object[] recordToObjectRow(ConsumerRecord<String, Object> record) {
+        String time = new SimpleDateFormat("dd.MM.yyy HH:mm:ss:sss").format(new Date(record.timestamp()));
+        String headersString = StreamSupport.stream(record.headers().spliterator(), false)
+                .map(h -> "\"" + h.key() + "\":\"" +
+                        new String(h.value(), StandardCharsets.UTF_8) + "\"")
+                .collect(Collectors.joining(", ", "{", "}"));
+
+        Object[] newRow = {
+                time,
+                record.key(),
+                record.offset(),
+                record.partition(),
+                headersString,
+                record.value()};
+        return newRow;
     }
 
 }

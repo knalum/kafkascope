@@ -3,7 +3,7 @@ package no.knalum;
 import javax.swing.*;
 
 public class SortPane extends JPanel implements MyListener {
-    public static JComboBox<SortType> sortChoice = new JComboBox<>(new SortType[]{SortType.Oldest, SortType.Newest});
+    public static JComboBox<SortType> sortChoice = new JComboBox<>(new SortType[]{SortType.Newest, SortType.Oldest, SortType.Tail,});
 
     public SortPane() {
         setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
@@ -24,7 +24,13 @@ public class SortPane extends JPanel implements MyListener {
     public void handleMessage(AppMessage message) {
     }
 
-    public enum SortType {
-        Oldest, Newest
+    public static SortType getSortChoice() {
+        return (SortType) sortChoice.getSelectedItem();
     }
+
+    public enum SortType {
+        Tail, Oldest, Newest
+    }
+
+
 }
