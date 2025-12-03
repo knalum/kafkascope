@@ -1,4 +1,8 @@
 package no.knalum;
 
-public record TreeTopicChanged(String topic) implements AppMessage {
+import javax.swing.tree.DefaultMutableTreeNode;
+
+public record TreeTopicChanged(DefaultMutableTreeNode selectedNode) implements AppMessage {
+
+
 }

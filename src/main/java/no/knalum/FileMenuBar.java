@@ -33,7 +33,7 @@ public class FileMenuBar extends JMenuBar {
         public EditMenu() {
             super("Edit");
 
-            add(new JMenuItem("Create topic") {{
+            add(new JMenuItem("Create selectedNode") {{
                 addActionListener(e -> {
                     AppKafkaClient.createTopic(UUID.randomUUID().toString().substring(0, 8));
                     AppKafkaClient.connectToKafkaAndPopulateTree();

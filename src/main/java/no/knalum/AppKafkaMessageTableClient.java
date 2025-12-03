@@ -79,10 +79,6 @@ public class AppKafkaMessageTableClient {
         // Cancel any existing consumer thread
         if (consumerThread != null && consumerThread.isAlive()) {
             consumerThread.interrupt();
-            try {
-                consumerThread.join(1000); // Wait up to 1s for clean shutdown
-            } catch (InterruptedException ignored) {
-            }
         }
         consumerThread = new Thread(() -> {
             Properties threadProps = new Properties();

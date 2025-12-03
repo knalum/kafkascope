@@ -52,7 +52,7 @@ public class KafkaConsumeStartEndTest {
 
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
 
-        String topic = "my-topic";
+        String topic = "my-selectedNode";
         int partition = 0;
         long startOffset = 12345L;   // <- YOUR START OFFSET
 

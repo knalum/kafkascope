@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.*;
 import java.util.concurrent.Executors;
 
@@ -16,7 +17,7 @@ public class StatsPanel extends JPanel implements MyListener {
     private final JPanel sizeField;
     private final JPanel partitionsField;
     private final JPanel recordField;
-    private String selectedTopic;
+    private DefaultMutableTreeNode selectedTopic;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StatsPanel.class);
 
@@ -35,7 +36,9 @@ public class StatsPanel extends JPanel implements MyListener {
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(
                 () -> {
                     if (selectedTopic != null) {
-                        getStats(selectedTopic);
+                        if (selectedTopic instanceof TopicNode) {
+                            getStats(selectedTopic.toString());
+                        }
                     }
                 },
                 0, STATS_UPDATE_INTERVAL_SEC, java.util.concurrent.TimeUnit.SECONDS
@@ -45,11 +48,14 @@ public class StatsPanel extends JPanel implements MyListener {
     @Override
     public void handleMessage(AppMessage message) {
         if (message instanceof TreeTopicChanged treeTopicChanged) {
-            this.selectedTopic = treeTopicChanged.topic();
+            this.selectedTopic = treeTopicChanged.selectedNode();
             new SwingWorker<Void, Void>() {
                 @Override
                 protected Void doInBackground() {
-                    getStats(selectedTopic);
+                    if (selectedTopic instanceof TopicNode) {
+                        getStats(selectedTopic.toString());
+
+                    }
                     return null;
                 }
             }.execute();
@@ -63,7 +69,7 @@ public class StatsPanel extends JPanel implements MyListener {
             KafkaStatsClient.TopicStats topicStats = new KafkaStatsClient().getTopicStats(selectedTopic);
             populateStatsPanel(topicStats);
         } catch (Exception e) {
-            LOGGER.error("Failed to get topic stats for topic " + selectedTopic, e);
+            LOGGER.error("Failed to get selectedNode stats for selectedNode " + selectedTopic, e);
         }
     }
 

@@ -60,7 +60,7 @@ public class ProducerPanel extends JPanel implements MyListener {
     @Override
     public void handleMessage(AppMessage event) {
         if (event instanceof TreeTopicChanged ev) {
-            this.selectedTopic = ev.topic();
+            this.selectedTopic = ev.selectedNode().toString();
         }
     }
 }

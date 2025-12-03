@@ -22,8 +22,8 @@ public class KafkaJmxTest {
         JMXConnector jmxc = JMXConnectorFactory.connect(url, null);
         MBeanServerConnection mbeanConn = jmxc.getMBeanServerConnection();
 
-        // Query all log size MBeans for this topic
-        String query = String.format("kafka.log:type=Log,name=Size,topic=%s,*", topic);
+        // Query all log size MBeans for this selectedNode
+        String query = String.format("kafka.log:type=Log,name=Size,selectedNode=%s,*", topic);
         Set<ObjectName> mbeans = mbeanConn.queryNames(new ObjectName(query), null);
 
         long totalSize = 0;
@@ -34,7 +34,7 @@ public class KafkaJmxTest {
             totalSize += size;
         }
 
-        System.out.println("Total topic size: " + totalSize + " bytes");
+        System.out.println("Total selectedNode size: " + totalSize + " bytes");
 
         jmxc.close();
     }

@@ -78,7 +78,7 @@ public class LeftTree extends JPanel implements MyListener {
         for (int index = 0; index < root1.getChildCount(); index++) {
             if (((DefaultMutableTreeNode) root1.getChildAt(index)).getUserObject().toString().toLowerCase().contains(filter.getText().toLowerCase())) {
                 Object userObject = ((DefaultMutableTreeNode) root1.getChildAt(index)).getUserObject();
-                filteredRoot.add(new DefaultMutableTreeNode(userObject));
+                filteredRoot.add(new TopicNode(userObject.toString()));
             }
         }
         return new DefaultTreeModel(filteredRoot);
@@ -87,9 +87,12 @@ public class LeftTree extends JPanel implements MyListener {
     class MySelectionListener implements TreeSelectionListener {
         @Override
         public void valueChanged(TreeSelectionEvent e) {
-            Object lastPathComponent = e.getNewLeadSelectionPath().getLastPathComponent();
-            selectedTopic = lastPathComponent.toString();
-            MessageBus.getInstance().publish(new TreeTopicChanged(selectedTopic));
+            if (e.getNewLeadSelectionPath() != null) {
+                Object lastPathComponent = e.getNewLeadSelectionPath().getLastPathComponent();
+                selectedTopic = lastPathComponent.toString();
+                DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) e.getNewLeadSelectionPath().getLastPathComponent();
+                MessageBus.getInstance().publish(new TreeTopicChanged(selectedNode));
+            }
         }
     }
 
@@ -99,7 +102,7 @@ public class LeftTree extends JPanel implements MyListener {
             this.originalModel = new DefaultTreeModel(new DefaultMutableTreeNode(message1.brokerUrl));
 
             message1.getNewNodes().stream().sorted().forEach(n -> {
-                ((DefaultMutableTreeNode) originalModel.getRoot()).add(new DefaultMutableTreeNode(n));
+                ((DefaultMutableTreeNode) originalModel.getRoot()).add(new TopicNode(n));
             });
 
             this.tree.setModel(originalModel);

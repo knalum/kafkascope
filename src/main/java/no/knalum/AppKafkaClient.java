@@ -74,7 +74,6 @@ public class AppKafkaClient {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            ErrorModal.showError("Error connecting to Kafka: " + e.getMessage());
         }
     }
 
@@ -104,7 +103,7 @@ public class AppKafkaClient {
             });
             ErrorModal.showInfo(sb.toString()); // Reuse modal for info
         } catch (Exception e) {
-            ErrorModal.showError("Error describing topic: " + e.getMessage());
+            ErrorModal.showError("Error describing selectedNode: " + e.getMessage());
         }
     }
 
@@ -176,7 +175,7 @@ public class AppKafkaClient {
 
             return total;
         } catch (Exception e) {
-            ErrorModal.showError("Error getting topic stats: " + e.getMessage());
+            e.printStackTrace();
         }
         return -1;
     }

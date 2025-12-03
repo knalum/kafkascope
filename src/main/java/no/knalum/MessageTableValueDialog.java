@@ -22,7 +22,7 @@ public class MessageTableValueDialog extends MouseAdapter {
             int col = table.columnAtPoint(e.getPoint());
             if (col == table.getColumnCount() - 1 && row != -1) {
                 Object value = table.getValueAt(row, col);
-                JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(table), "Value", true);
+                JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(table), "Value", false);
 
                 RSyntaxTextArea textArea = new RSyntaxTextArea(20, 60);
                 textArea.setEditable(false);

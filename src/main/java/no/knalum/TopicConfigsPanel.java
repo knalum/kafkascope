@@ -68,8 +68,11 @@ public class TopicConfigsPanel extends JPanel implements MyListener {
     @Override
     public void handleMessage(AppMessage message) {
         if (message instanceof TreeTopicChanged topicSelected) {
-            this.selectedTopic = topicSelected.topic();
-            getTopicConfigParams(selectedTopic);
+            if (topicSelected.selectedNode() instanceof TopicNode) {
+                this.selectedTopic = topicSelected.selectedNode().toString();
+                getTopicConfigParams(selectedTopic);
+
+            }
         }
     }
 

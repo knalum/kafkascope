@@ -19,6 +19,7 @@ public class MessageTable extends JPanel implements MyListener {
     private final JTable table;
     private String selectedTopic;
     private int currentPage = 0;
+    private SwingWorker<Void, Void> activeWorker;
 
     public MessageTable() {
         setLayout(new BorderLayout());
@@ -56,16 +57,8 @@ public class MessageTable extends JPanel implements MyListener {
     @Override
     public void handleMessage(AppMessage message) {
         if (message instanceof TreeTopicChanged treeTopicChanged) {
-            ((DefaultTableModel) table.getModel()).setRowCount(0);
-            this.selectedTopic = treeTopicChanged.topic();
-
-            new SwingWorker<>() {
-                @Override
-                protected Object doInBackground() throws Exception {
-                    subscribeOrGetFromKafka(selectedTopic);
-                    return null;
-                }
-            }.execute();
+            this.selectedTopic = treeTopicChanged.selectedNode().toString();
+            subscribeOrGetFromKafka(selectedTopic);
         } else if (message instanceof NextPageMessage) {
             if (selectedTopic == null) {
                 return;
@@ -94,27 +87,41 @@ public class MessageTable extends JPanel implements MyListener {
     }
 
     private void subscribeOrGetFromKafka(String selectedTopic) {
-        if (SortPane.getSortChoice() == SortPane.SortType.Tail) {
-            DefaultTableModel model = (DefaultTableModel) table.getModel();
-            AppKafkaMessageTableClient.getInstance().subscribe(selectedTopic, (ConsumerRecords<String, Object> o) -> {
-                for (ConsumerRecord<String, Object> record : o) {
-                    model.insertRow(0, recordToObjectRow(record));
-                }
-            });
-        } else {
-            System.out.println("Subscribe from " + selectedTopic);
-            List<ConsumerRecord<String, Object>> records = AppKafkaMessageTableClient.getInstance().getRecords(selectedTopic, (SortPane.SortType) SortPane.sortChoice.getSelectedItem(), currentPage);
-            setTableRecords(records);
-
-            if (SortPane.getSortChoice() == SortPane.SortType.Newest) {
-                DefaultTableModel model = (DefaultTableModel) table.getModel();
-                AppKafkaMessageTableClient.getInstance().subscribe(selectedTopic, (ConsumerRecords<String, Object> o) -> {
-                    for (ConsumerRecord<String, Object> record : o) {
-                        model.insertRow(0, recordToObjectRow(record));
-                    }
-                });
-            }
+        ((DefaultTableModel) table.getModel()).setRowCount(0);
+        // Cancel any previous worker
+        if (activeWorker != null && !activeWorker.isDone()) {
+            activeWorker.cancel(true);
         }
+        activeWorker = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() {
+                if (SortPane.getSortChoice() == SortPane.SortType.Tail) {
+                    DefaultTableModel model = (DefaultTableModel) table.getModel();
+                    AppKafkaMessageTableClient.getInstance().subscribe(selectedTopic, (ConsumerRecords<String, Object> o) -> {
+                        for (ConsumerRecord<String, Object> record : o) {
+                            if (isCancelled()) break;
+                            SwingUtilities.invokeLater(() -> model.insertRow(0, recordToObjectRow(record)));
+                        }
+                    });
+                } else {
+                    System.out.println("Subscribe from " + selectedTopic);
+                    List<ConsumerRecord<String, Object>> records = AppKafkaMessageTableClient.getInstance().getRecords(selectedTopic, (SortPane.SortType) SortPane.sortChoice.getSelectedItem(), currentPage);
+                    SwingUtilities.invokeLater(() -> setTableRecords(records));
+
+                    if (SortPane.getSortChoice() == SortPane.SortType.Newest) {
+                        DefaultTableModel model = (DefaultTableModel) table.getModel();
+                        AppKafkaMessageTableClient.getInstance().subscribe(selectedTopic, (ConsumerRecords<String, Object> o) -> {
+                            for (ConsumerRecord<String, Object> record : o) {
+                                if (isCancelled()) break;
+                                SwingUtilities.invokeLater(() -> model.insertRow(0, recordToObjectRow(record)));
+                            }
+                        });
+                    }
+                }
+                return null;
+            }
+        };
+        activeWorker.execute();
     }
 
     private void setTableRecords(List<ConsumerRecord<String, Object>> records) {

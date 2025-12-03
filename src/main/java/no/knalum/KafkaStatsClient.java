@@ -26,8 +26,8 @@ public class KafkaStatsClient {
 
     public TopicStats getTopicStats(String topicName) throws Exception {
         Map<String, String> stats = getStats(Map.of(
-                "size", "kafka.log:type=Log,name=Size,topic=" + topicName + ",*",
-                "count", "kafka.log:type=Log,name=LogEndOffset,topic=" + topicName + ",*"
+                "size", "kafka.log:type=Log,name=Size,selectedNode=" + topicName + ",*",
+                "count", "kafka.log:type=Log,name=LogEndOffset,selectedNode=" + topicName + ",*"
         ));
 
         ConsumerStats consumerStats = findTsAndNumPartitions(topicName);
@@ -72,8 +72,6 @@ public class KafkaStatsClient {
                     consumer.seek(tp, lastOffset);
                     ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(1));
                     ts = records.iterator().next().timestamp();
-                } else {
-                    System.out.println("Partition " + tp.partition() + " is empty");
                 }
             }
         }
