@@ -65,7 +65,6 @@ public class MessageTable extends JPanel implements MyListener {
             }
             int numPages = Math.toIntExact(AppKafkaClient.getNumRecords(selectedTopic) / 100);
             if (currentPage + 1 > numPages) {
-                System.out.println("No more pages");
                 return;
             }
             currentPage++;
@@ -104,7 +103,6 @@ public class MessageTable extends JPanel implements MyListener {
                         }
                     });
                 } else {
-                    System.out.println("Subscribe from " + selectedTopic);
                     List<ConsumerRecord<String, Object>> records = AppKafkaMessageTableClient.getInstance().getRecords(selectedTopic, (SortPane.SortType) SortPane.sortChoice.getSelectedItem(), currentPage);
                     SwingUtilities.invokeLater(() -> setTableRecords(records));
 

@@ -68,6 +68,7 @@ public class StatsPanel extends JPanel implements MyListener {
         try {
             KafkaStatsClient.TopicStats topicStats = new KafkaStatsClient().getTopicStats(selectedTopic);
             populateStatsPanel(topicStats);
+            MessageBus.getInstance().publish(new TopicStatsMessage(topicStats));
         } catch (Exception e) {
             LOGGER.error("Failed to get selectedNode stats for selectedNode " + selectedTopic, e);
         }

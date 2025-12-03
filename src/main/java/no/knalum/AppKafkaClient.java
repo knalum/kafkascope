@@ -39,18 +39,28 @@ public class AppKafkaClient {
         }
     }
 
-
-    public static void sendMessageToBroker(String topic, String key, String value) {
+    public static void sendMessageToBroker(String topic, String key, String value, Integer partition) {
         String broker = BrokerConfig.getInstance().getBrokerUrl();
-
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, broker);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-
-        KafkaProducer<String, String> producer = new KafkaProducer<>(props);
-        producer.send(new ProducerRecord<>(topic, key, value));
-        producer.close();
+        KafkaProducer<String, String> producer = null;
+        try {
+            producer = new KafkaProducer<>(props);
+            producer.send(new ProducerRecord<>(topic, partition, key, value));
+        } catch (Exception e) {
+            ErrorModal.showError("Error sending message to broker: " + e.getMessage());
+            LOGGER.error("Error sending message to broker: {}", e.getMessage());
+        } finally {
+            if (producer != null) {
+                try {
+                    producer.close();
+                } catch (Exception e) {
+                    LOGGER.warn("Error closing KafkaProducer: {}", e.getMessage());
+                }
+            }
+        }
     }
 
     public static void deleteTopic(String topic) {

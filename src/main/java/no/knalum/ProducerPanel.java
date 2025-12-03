@@ -12,6 +12,7 @@ public class ProducerPanel extends JPanel implements MyListener {
     private RSyntaxTextArea recordValue;
     private String selectedTopic;
     private JTextField keyField;
+    private JComboBox partitionField;
 
     public ProducerPanel() {
         setLayout(new BorderLayout());
@@ -30,10 +31,14 @@ public class ProducerPanel extends JPanel implements MyListener {
         }});
         PromptSupport.setPrompt("Key", keyField);
 
+        jPanel.add(this.partitionField = new JComboBox<>(new Object[]{"0"}) {{
+            setMaximumSize(new Dimension(20, 25));
+            setToolTipText("Partition");
+        }});
 
         jPanel.add(new JButton("Send") {{
             addActionListener(e -> {
-                AppKafkaClient.sendMessageToBroker(selectedTopic, keyField.getText(), recordValue.getText());
+                AppKafkaClient.sendMessageToBroker(selectedTopic, keyField.getText(), recordValue.getText(), Integer.valueOf(partitionField.getSelectedItem().toString()));
             });
         }});
 
@@ -61,6 +66,16 @@ public class ProducerPanel extends JPanel implements MyListener {
     public void handleMessage(AppMessage event) {
         if (event instanceof TreeTopicChanged ev) {
             this.selectedTopic = ev.selectedNode().toString();
+        } else if (event instanceof TopicStatsMessage msg) {
+            setNumPartitions(msg.topicStats().numPartitions());
         }
+    }
+
+    private void setNumPartitions(Integer integer) {
+        partitionField.removeAllItems();
+        for (int i = 0; i < integer.intValue(); i++) {
+            partitionField.addItem(i);
+        }
+        updateUI();
     }
 }
