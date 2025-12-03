@@ -1,8 +1,15 @@
 package no.knalum;
 
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import java.util.Collections;
+import java.util.Properties;
+import java.util.concurrent.ExecutionException;
 
 @Disabled
 public class KafkaAdminTest {
@@ -13,6 +20,20 @@ public class KafkaAdminTest {
 
     @Test
     void name() {
-        AppKafkaClient.describeTopic2("key-value-2");
+        AppKafkaClient.deleteTopic("d8717580");
+    }
+
+    @Test
+    void testDel() throws ExecutionException, InterruptedException {
+        Properties props = new Properties();
+        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:29092");
+
+        try (AdminClient admin = AdminClient.create(props)) {
+            DeleteTopicsResult result =
+                    admin.deleteTopics(Collections.singletonList("3650"));
+
+            // Wait for operation to complete
+            result.all().get();
+        }
     }
 }

@@ -40,6 +40,12 @@ public class TreeContextMenuAdapter extends MouseAdapter {
                         (DefaultMutableTreeNode) path.getLastPathComponent();
 
                 JPopupMenu popup = new JPopupMenu();
+                JMenuItem deleteTopic = new JMenuItem("Delete topic");
+                deleteTopic.addActionListener(evt -> {
+                    AppKafkaClient.deleteTopic(selectedNode.getUserObject().toString());
+                    AppKafkaClient.connectToKafkaAndPopulateTree();
+                });
+                popup.add(deleteTopic);
 
                 popup.add(new JMenuItem("Add selectedNode") {{
                     addActionListener(e -> {

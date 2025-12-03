@@ -1,14 +1,9 @@
 package no.knalum;
 
 import org.apache.kafka.clients.admin.*;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
@@ -16,10 +11,8 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class AppKafkaClient {
 
@@ -29,6 +22,7 @@ public class AppKafkaClient {
     public static Set<String> connect(BrokerConfig instance) throws ExecutionException, InterruptedException {
         String brokerUrl = instance.getBrokerUrl();
         java.util.Properties props = new java.util.Properties();
+        props.put("bootstrap.servers", brokerUrl);
         props.put("bootstrap.servers", brokerUrl);
         AdminClient client = AdminClient.create(props);
         return client.listTopics().names().get();
@@ -60,18 +54,12 @@ public class AppKafkaClient {
     }
 
     public static void deleteTopic(String topic) {
+        AppKafkaMessageTableClient.getInstance().cancelSubscribe();
         String brokerUrl = BrokerConfig.getInstance().getBrokerUrl();
         Properties props = new Properties();
         props.put("bootstrap.servers", brokerUrl);
         try (AdminClient adminClient = AdminClient.create(props)) {
-            adminClient.deleteTopics(Collections.singletonList("output3")).all().get();
-
-            Map<String, TopicDescription> descriptions = adminClient.describeTopics(Collections.singleton(topic)).all().get();
-            TopicDescription desc = descriptions.get(topic);
-
-            if (desc.isInternal()) {
-                // Cannot delete internal topics
-            }
+            adminClient.deleteTopics(Collections.singletonList(topic)).all().get();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -178,84 +166,5 @@ public class AppKafkaClient {
             e.printStackTrace();
         }
         return -1;
-    }
-
-    public void closeSubscribing() {
-        isSubscribing = false;
-    }
-
-
-    public void subscribeToKafkaTopic(String broker, String topic, SortPane.SortType sortChoice, int page) {
-        Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, broker);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, CustomValueDeserializer.class);
-        props.put("schema.registry.url", BrokerConfig.getInstance().getSchemaRegistryUrl());
-        //    props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, SpecificAvroSerde::class.java)
-        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-
-        if (sortChoice == SortPane.SortType.Oldest) {
-            props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 100);
-        }
-        KafkaConsumer consumer = new KafkaConsumer<>(props);
-        List<PartitionInfo> partitionInfos = consumer.partitionsFor(topic);
-
-        List<TopicPartition> partitions = new ArrayList<>();
-        for (PartitionInfo p : partitionInfos) {
-            partitions.add(new TopicPartition(topic, p.partition()));
-        }
-        consumer.assign(partitions);
-
-        if (sortChoice == SortPane.SortType.Oldest) {
-            for (TopicPartition tp : partitions) {
-                consumer.seek(tp, page * 100L);
-            }
-
-            AtomicInteger i = new AtomicInteger();
-            new Thread(() -> {
-                try {
-                    isSubscribing = true;
-                    do {
-                        ConsumerRecords<String, Object> records = consumer.poll(Duration.ofSeconds(1));
-                        i.addAndGet(records.count());
-                        for (ConsumerRecord record : records) {
-                            MessageBus.getInstance().publish(new RecordConsumed(record));
-                        }
-
-                    } while (isSubscribing && i.get() < 100);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                } finally {
-                    consumer.close();
-                }
-            }).start();
-
-        } else {
-            consumer.seekToEnd(partitions);
-            for (TopicPartition tp : partitions) {
-                long latestOffset = consumer.position(tp);
-                consumer.seek(tp, Math.max(0, latestOffset - 100));
-            }
-
-            new Thread(() -> {
-                try {
-                    isSubscribing = true;
-                    do {
-                        ConsumerRecords<String, Object> records = consumer.poll(Duration.ofSeconds(1));
-                        for (ConsumerRecord record : records) {
-                            MessageBus.getInstance().publish(new RecordConsumed(record));
-                        }
-
-                    } while (isSubscribing);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                } finally {
-                    consumer.close();
-                }
-            }).start();
-        }
-
-
     }
 }

@@ -74,12 +74,14 @@ public class AppKafkaMessageTableClient {
         }
     }
 
-
-    public void subscribe(String selectedTopic, Consumer<ConsumerRecords<String, Object>> o) {
-        // Cancel any existing consumer thread
+    public void cancelSubscribe() {
         if (consumerThread != null && consumerThread.isAlive()) {
             consumerThread.interrupt();
         }
+    }
+
+    public void subscribe(String selectedTopic, Consumer<ConsumerRecords<String, Object>> o) {
+        cancelSubscribe();
         consumerThread = new Thread(() -> {
             Properties threadProps = new Properties();
             threadProps.putAll(props);
