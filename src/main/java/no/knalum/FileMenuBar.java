@@ -29,7 +29,6 @@ public class FileMenuBar extends JMenuBar implements MyListener {
 
         add(menu);
         add(new EditMenu());
-        add(new ProducerMenu());
         add(new Help());
 
         MessageBus.getInstance().subscribe(this);
@@ -39,7 +38,6 @@ public class FileMenuBar extends JMenuBar implements MyListener {
     public void handleMessage(AppMessage message) {
         if (message instanceof TreeTopicChanged msg) {
             this.selectedNode = msg.selectedNode();
-            exampleJsonMenuItem.setEnabled(true);
         }
     }
 
@@ -76,17 +74,5 @@ public class FileMenuBar extends JMenuBar implements MyListener {
     }
 
 
-    private class ProducerMenu extends JMenu {
 
-        public ProducerMenu() {
-            super("Producer");
-            add(exampleJsonMenuItem = new JMenuItem("Set schema example value") {{
-                setEnabled(false);
-                addActionListener(e -> {
-                    String schemaExampleJson = AppKafkaClient.getSchemaExample(selectedNode);
-                    MessageBus.getInstance().publish(new SchemaJsonExampleMessage(schemaExampleJson));
-                });
-            }});
-        }
-    }
 }

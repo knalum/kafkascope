@@ -13,6 +13,8 @@ public class ProducerPanel extends JPanel implements MyListener {
     private String selectedTopic;
     private JTextField keyField;
     private JComboBox partitionField;
+    private JButton moreMenu;
+    private JButton sendButton;
 
     public ProducerPanel() {
         setLayout(new BorderLayout());
@@ -21,11 +23,14 @@ public class ProducerPanel extends JPanel implements MyListener {
         add(createValuePanel(), BorderLayout.CENTER);
 
         MessageBus.getInstance().subscribe(this);
+        Util.setAllChildrenEnabled(false,getComponents());
     }
+
 
     private JPanel createKeySendPanel() {
         JPanel jPanel = new JPanel();
         jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.X_AXIS));
+
         jPanel.add(this.keyField = new JTextField() {{
             setMaximumSize(new Dimension(2000, 25));
         }});
@@ -36,11 +41,18 @@ public class ProducerPanel extends JPanel implements MyListener {
             setToolTipText("Partition");
         }});
 
-        jPanel.add(new JButton("Send") {{
+        jPanel.add(this.moreMenu = new JButton("...") {{
+            setEnabled(false);
+            addActionListener(e -> new ProducerPanelPopupMenu(selectedTopic).show(this, 0, this.getHeight()));
+        }});
+
+        jPanel.add(this.sendButton = new JButton("Send") {{
+            setEnabled(false);
             addActionListener(e -> {
                 AppKafkaClient.sendMessageToBroker(selectedTopic, keyField.getText(), recordValue.getText(), Integer.valueOf(partitionField.getSelectedItem().toString()));
             });
         }});
+
 
         return jPanel;
     }
@@ -74,9 +86,10 @@ public class ProducerPanel extends JPanel implements MyListener {
     public void handleMessage(AppMessage event) {
         if (event instanceof TreeTopicChanged ev) {
             this.selectedTopic = ev.selectedNode().toString();
+            Util.setAllChildrenEnabled(ev.selectedNode() instanceof TopicNode, getComponents());
         } else if (event instanceof TopicStatsMessage msg) {
             setNumPartitions(msg.topicStats().numPartitions());
-        }else if(event instanceof SchemaJsonExampleMessage msg){
+        } else if (event instanceof SchemaJsonExampleMessage msg) {
             recordValue.setText(msg.schemaExampleJson());
         }
     }

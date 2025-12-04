@@ -8,6 +8,8 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -41,6 +43,22 @@ public class MessageTable extends JPanel implements MyListener {
         JScrollPane scrollPane = new JScrollPane(table);
         add(new SortPane(), BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
+
+        // Add key binding for Enter on Value column
+        KeyStroke enterKey = KeyStroke.getKeyStroke("ENTER");
+        table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(enterKey, "openValueDialog");
+        table.getActionMap().put("openValueDialog", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int row = table.getSelectedRow();
+                int col = table.getSelectedColumn();
+                // Value column is index 5
+                if (row != -1 && col == 5) {
+                    Object value = table.getValueAt(row, col);
+                    new MessageTableValueDialog(table).getJDialog(value).setVisible(true);
+                }
+            }
+        });
 
         MessageBus.getInstance().subscribe(this);
     }

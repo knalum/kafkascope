@@ -4,6 +4,8 @@ import javax.swing.*;
 
 public class SortPane extends JPanel implements MyListener {
     public static JComboBox<SortType> sortChoice = new JComboBox<>(new SortType[]{SortType.Newest, SortType.Oldest, SortType.Tail,});
+    private final JButton prevBtn;
+    private final JButton nextBtn;
 
     public SortPane() {
         setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
@@ -12,16 +14,24 @@ public class SortPane extends JPanel implements MyListener {
 
         add(sortChoice);
         add(Box.createHorizontalGlue()); // Add max gap between sortChoice and buttons
-        add(new JButton("Prev") {{
+        add(this.prevBtn=new JButton("Prev") {{
+            setEnabled(false);
             addActionListener(e -> MessageBus.getInstance().publish(new PrevPageMessage()));
         }});
-        add(new JButton("Next") {{
+        add(this.nextBtn = new JButton("Next") {{
+            setEnabled(false);
             addActionListener(e -> MessageBus.getInstance().publish(new NextPageMessage()));
         }});
+
+        MessageBus.getInstance().subscribe(this);
+        Util.setAllChildrenEnabled(false,getComponents());
     }
 
     @Override
     public void handleMessage(AppMessage message) {
+        if(message instanceof TreeTopicChanged msg){
+            Util.setAllChildrenEnabled(msg.selectedNode() instanceof TopicNode,getComponents());
+        }
     }
 
     public static SortType getSortChoice() {

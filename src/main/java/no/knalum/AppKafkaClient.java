@@ -186,8 +186,8 @@ public class AppKafkaClient {
         return -1;
     }
 
-    public static String getSchemaExample(DefaultMutableTreeNode selectedNode) {
-        String schemaForTopic = getSchemaForTopic(selectedNode.toString());
+    public static String getSchemaExample(String  selectedNode) {
+        String schemaForTopic = getSchemaForTopic(selectedNode);
         return transformAvroSchemaToExampleJson(schemaForTopic);
     }
 
