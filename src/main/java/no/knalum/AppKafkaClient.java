@@ -1,5 +1,12 @@
 package no.knalum;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
+import org.apache.avro.Schema;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -11,13 +18,14 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 public class AppKafkaClient {
 
-    private boolean isSubscribing;
     private static final Logger LOGGER = LoggerFactory.getLogger(AppKafkaClient.class);
+    static ObjectMapper mapper = new ObjectMapper();
 
     public static Set<String> connect(BrokerConfig instance) throws ExecutionException, InterruptedException {
         String brokerUrl = instance.getBrokerUrl();
@@ -176,5 +184,93 @@ public class AppKafkaClient {
             e.printStackTrace();
         }
         return -1;
+    }
+
+    public static String getSchemaExample(DefaultMutableTreeNode selectedNode) {
+        String schemaForTopic = getSchemaForTopic(selectedNode.toString());
+        return transformAvroSchemaToExampleJson(schemaForTopic);
+    }
+
+    public static String getSchemaForTopic(String topic) {
+        SchemaRegistryClient cli = new CachedSchemaRegistryClient("http://localhost:8081", 100);
+        try {
+            SchemaMetadata data = cli.getLatestSchemaMetadata(topic + "-value");
+
+            String schema = data.getSchema();
+            return schema;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return topic;
+    }
+
+
+    public static String transformAvroSchemaToExampleJson(String avroSchema)  {
+
+        Schema schema = new Schema.Parser().parse(avroSchema);
+        try {
+
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(generateExampleJson(schema));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "N/A";
+    }
+
+
+    public static JsonNode generateExampleJson(Schema schema) {
+        switch (schema.getType()) {
+
+            case RECORD:
+                ObjectNode recordNode = mapper.createObjectNode();
+                for (Schema.Field field : schema.getFields()) {
+                    recordNode.set(field.name(), generateExampleJson(field.schema()));
+                }
+                return recordNode;
+
+            case STRING:
+                return mapper.getNodeFactory().textNode("exampleString");
+
+            case INT:
+                return mapper.getNodeFactory().numberNode(42);
+
+            case LONG:
+                return mapper.getNodeFactory().numberNode(1234567890123L);
+
+            case FLOAT:
+                return mapper.getNodeFactory().numberNode(3.14f);
+
+            case DOUBLE:
+                return mapper.getNodeFactory().numberNode(3.14159);
+
+            case BOOLEAN:
+                return mapper.getNodeFactory().booleanNode(true);
+
+            case ENUM:
+                return mapper.getNodeFactory().textNode(schema.getEnumSymbols().get(0));
+
+            case ARRAY:
+                return mapper.createArrayNode().add(generateExampleJson(schema.getElementType()));
+
+            case MAP:
+                ObjectNode mapNode = mapper.createObjectNode();
+                mapNode.set("key1", generateExampleJson(schema.getValueType()));
+                return mapNode;
+
+            case UNION:
+                // pick first non-null type
+                for (Schema s : schema.getTypes()) {
+                    if (s.getType() != Schema.Type.NULL) {
+                        return generateExampleJson(s);
+                    }
+                }
+                return mapper.nullNode();
+
+            case NULL:
+                return mapper.nullNode();
+
+            default:
+                return mapper.getNodeFactory().textNode("unsupportedType");
+        }
     }
 }

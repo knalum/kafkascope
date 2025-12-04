@@ -54,6 +54,14 @@ public class ProducerPanel extends JPanel implements MyListener {
         recordValue.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JSON);
         recordValue.setCodeFoldingEnabled(true);
 
+        KeyStroke cmdEnter = KeyStroke.getKeyStroke("meta ENTER");
+        recordValue.getInputMap().put(cmdEnter, "sendMessage");
+        recordValue.getActionMap().put("sendMessage", new AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                AppKafkaClient.sendMessageToBroker(selectedTopic, keyField.getText(), recordValue.getText(), Integer.valueOf(partitionField.getSelectedItem().toString()));
+            }
+        });
         RTextScrollPane sp = new RTextScrollPane(recordValue);
 
         jPanel.add(sp);
@@ -68,6 +76,8 @@ public class ProducerPanel extends JPanel implements MyListener {
             this.selectedTopic = ev.selectedNode().toString();
         } else if (event instanceof TopicStatsMessage msg) {
             setNumPartitions(msg.topicStats().numPartitions());
+        }else if(event instanceof SchemaJsonExampleMessage msg){
+            recordValue.setText(msg.schemaExampleJson());
         }
     }
 
