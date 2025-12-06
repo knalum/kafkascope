@@ -1,5 +1,6 @@
 package no.knalum.ui.treeview;
 
+import no.knalum.config.BrokerConfig;
 import no.knalum.kafka.AppKafkaClient;
 import org.apache.kafka.clients.admin.TopicDescription;
 
@@ -44,7 +45,7 @@ public class TreeContextMenuAdapter extends MouseAdapter {
                 JMenuItem deleteTopic = new JMenuItem("Delete topic");
                 deleteTopic.addActionListener(evt -> {
                     AppKafkaClient.deleteTopic(selectedNode.getUserObject().toString());
-                    AppKafkaClient.connectToKafkaAndPopulateTree();
+                    AppKafkaClient.connectToKafkaAndPopulateTree(BrokerConfig.getInstance().getConfig());
                 });
                 popup.add(deleteTopic);
 

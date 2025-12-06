@@ -1,6 +1,7 @@
 package no.knalum.config;
 
 import com.jgoodies.binding.beans.Model;
+import no.knalum.menu.BrokerDialogSettings;
 
 public class BrokerConfig extends Model {
     private static BrokerConfig instance;
@@ -42,5 +43,9 @@ public class BrokerConfig extends Model {
         String old = this.schemaRegistryUrl;
         this.schemaRegistryUrl = schemaRegistryUrl;
         firePropertyChange("schemaRegistryUrl", old, schemaRegistryUrl);
+    }
+
+    public BrokerDialogSettings getConfig() {
+        return new BrokerDialogSettings(getBrokerUrl(), getSchemaRegistryUrl());
     }
 }

@@ -16,7 +16,6 @@ import java.awt.event.KeyEvent;
 
 public class TopicTreeView extends JPanel implements MessageListener {
     private final JTree tree;
-    private final DefaultMutableTreeNode root;
     private JTextField filter;
     private DefaultTreeModel originalModel;
     private String selectedTopic;
@@ -26,7 +25,6 @@ public class TopicTreeView extends JPanel implements MessageListener {
     public TopicTreeView() {
         super(new BorderLayout());
         setDoubleBuffered(true);
-        this.root = new DefaultMutableTreeNode("Broker");
 
         add(createFilterPanel(), BorderLayout.NORTH);
 
@@ -39,7 +37,7 @@ public class TopicTreeView extends JPanel implements MessageListener {
                 }
             }
         });
-        add(new JScrollPane(this.tree = new JTree(root)));
+        add(new JScrollPane(this.tree = new JTree(new DefaultTreeModel(new DefaultMutableTreeNode()))));
         tree.expandRow(0);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         tree.setCellRenderer(new DefaultTreeCellRenderer() {
@@ -103,12 +101,12 @@ public class TopicTreeView extends JPanel implements MessageListener {
     public void handleMessage(AppMessage message) {
         if (message instanceof ConnectedToBrokerMessage message1) {
             this.originalModel = new DefaultTreeModel(new DefaultMutableTreeNode(message1.brokerUrl));
-
+            originalModel.setRoot(new DefaultMutableTreeNode(message1.brokerUrl));
             message1.getNewNodes().stream().sorted().forEach(n -> {
                 ((DefaultMutableTreeNode) originalModel.getRoot()).add(new TopicNode(n));
             });
 
-            this.tree.setModel(originalModel);
+            this.tree.setModel(this.originalModel);
             this.tree.expandRow(0);
             tree.updateUI();
         } else if (message instanceof SelectTreeItemMessage msg) {

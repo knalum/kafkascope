@@ -7,6 +7,7 @@ import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import no.knalum.config.BrokerConfig;
+import no.knalum.menu.BrokerDialogSettings;
 import no.knalum.menu.dialog.CreateTopicDialogParams;
 import no.knalum.message.ConnectedToBrokerMessage;
 import no.knalum.message.MessageBus;
@@ -32,18 +33,16 @@ public class AppKafkaClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(AppKafkaClient.class);
     static ObjectMapper mapper = new ObjectMapper();
 
-    public static Set<String> connect(BrokerConfig instance) throws ExecutionException, InterruptedException {
-        String brokerUrl = instance.getBrokerUrl();
+    public static Set<String> connect(String broker, String schema) throws ExecutionException, InterruptedException {
         java.util.Properties props = new java.util.Properties();
-        props.put("bootstrap.servers", brokerUrl);
-        props.put("bootstrap.servers", brokerUrl);
+        props.put("bootstrap.servers", broker);
         AdminClient client = AdminClient.create(props);
         return client.listTopics().names().get();
     }
 
-    public static void connectToKafkaAndPopulateTree() {
+    public static void connectToKafkaAndPopulateTree(String broker, String schema) {
         try {
-            Set<String> topics = AppKafkaClient.connect(BrokerConfig.getInstance());
+            Set<String> topics = AppKafkaClient.connect(broker, schema);
             MessageBus.getInstance().publish(new ConnectedToBrokerMessage(BrokerConfig.getInstance().getBrokerUrl(), topics));
         } catch (Exception e) {
             e.printStackTrace();
@@ -303,5 +302,9 @@ public class AppKafkaClient {
             default:
                 return mapper.getNodeFactory().textNode("unsupportedType");
         }
+    }
+
+    public static void connectToKafkaAndPopulateTree(BrokerDialogSettings cb) {
+        connectToKafkaAndPopulateTree(cb.broker(), cb.schemaReg());
     }
 }

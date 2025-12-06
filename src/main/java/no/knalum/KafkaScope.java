@@ -3,7 +3,7 @@ package no.knalum;
 import no.knalum.config.BrokerConfig;
 import no.knalum.config.ConfigSaver;
 import no.knalum.kafka.AppKafkaClient;
-import no.knalum.menu.FileMenuBar;
+import no.knalum.menu.MenuBar;
 import no.knalum.swingcomponents.GlobalTextPopupInstaller;
 import no.knalum.ui.MainSplitPane;
 import no.knalum.ui.StatusBar;
@@ -17,14 +17,19 @@ import java.util.Date;
 public class KafkaScope extends JFrame {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaScope.class);
+    private static KafkaScope kafkaScope;
+
+    public static KafkaScope getInstance() {
+        return kafkaScope;
+    }
 
     KafkaScope() {
-        setJMenuBar(new FileMenuBar(this));
+        setJMenuBar(new MenuBar(this));
         add(new MainSplitPane());
         add(new StatusBar(), BorderLayout.SOUTH);
         ConfigSaver.loadConfig();
-        if (!BrokerConfig.getInstance().getBrokerUrl().isEmpty()) {
-            AppKafkaClient.connectToKafkaAndPopulateTree();
+        if (BrokerConfig.getInstance().getBrokerUrl() != null) {
+            AppKafkaClient.connectToKafkaAndPopulateTree(BrokerConfig.getInstance().getConfig());
         }
         LOGGER.info("Kafka Scope started at " + new Date());
     }
@@ -35,7 +40,7 @@ public class KafkaScope extends JFrame {
         UIManager.setLookAndFeel("com.formdev.flatlaf.themes.FlatMacLightLaf");
         GlobalTextPopupInstaller.install();
 
-        KafkaScope kafkaScope = new KafkaScope();
+        kafkaScope = new KafkaScope();
         kafkaScope.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         kafkaScope.setSize(1000, 700);
         kafkaScope.setLocationRelativeTo(null);

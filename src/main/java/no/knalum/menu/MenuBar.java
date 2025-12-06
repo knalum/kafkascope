@@ -4,7 +4,6 @@ import no.knalum.KafkaScope;
 import no.knalum.config.BrokerConfig;
 import no.knalum.kafka.AppKafkaClient;
 import no.knalum.menu.dialog.AboutDialog;
-import no.knalum.menu.dialog.ConfigDialog;
 import no.knalum.menu.dialog.CreateNewTopicDialog;
 import no.knalum.menu.dialog.CreateTopicDialogParams;
 import no.knalum.message.*;
@@ -14,30 +13,15 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.Set;
 import java.util.function.Consumer;
 
-public class FileMenuBar extends JMenuBar implements MessageListener {
+public class MenuBar extends JMenuBar implements MessageListener {
     private final KafkaScope kafkaScope;
     private DefaultMutableTreeNode selectedNode;
     private JMenuItem exampleJsonMenuItem;
 
-    public FileMenuBar(KafkaScope kafkaScope) {
+    public MenuBar(KafkaScope kafkaScope) {
         this.kafkaScope = kafkaScope;
-        JMenu menu = new JMenu("File");
-        JMenuItem settingsItem = new JMenuItem("Settings...");
-        settingsItem.addActionListener(e -> new ConfigDialog(kafkaScope));
 
-        JMenuItem closeItem = new JMenuItem("Exit");
-        closeItem.addActionListener(e -> {
-            new SwingWorker<>() {
-                @Override
-                protected Object doInBackground() throws Exception {
-                    System.exit(0);
-                    return null;
-                }
-            }.execute();
-        });
-        menu.add(closeItem);
-
-        add(menu);
+        add(new FileMenu());
         add(new EditMenu());
         add(new ViewMenu());
         add(new Help());
@@ -62,7 +46,7 @@ public class FileMenuBar extends JMenuBar implements MessageListener {
                     public void accept(CreateTopicDialogParams createTopicDialogParams) {
                         try {
                             AppKafkaClient.createTopic(createTopicDialogParams);
-                            Set<String> topics = AppKafkaClient.connect(BrokerConfig.getInstance());
+                            Set<String> topics = AppKafkaClient.connect(BrokerConfig.getInstance().getBrokerUrl(), BrokerConfig.getInstance().getSchemaRegistryUrl());
                             MessageBus.getInstance().publish(new ConnectedToBrokerMessage(BrokerConfig.getInstance().getBrokerUrl(), topics));
                             MessageBus.getInstance().publish(new SelectTreeItemMessage(createTopicDialogParams.topicName()));
                         } catch (Exception ex) {
@@ -75,7 +59,7 @@ public class FileMenuBar extends JMenuBar implements MessageListener {
 
             JMenuItem refreshItem = new JMenuItem("Refresh topics");
             refreshItem.addActionListener(e -> {
-                AppKafkaClient.connectToKafkaAndPopulateTree();
+                AppKafkaClient.connectToKafkaAndPopulateTree(BrokerConfig.getInstance().getConfig());
             });
             refreshItem.setAccelerator(KeyStroke.getKeyStroke("meta R"));
             add(refreshItem);

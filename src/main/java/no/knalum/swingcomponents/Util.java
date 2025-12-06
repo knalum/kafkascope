@@ -1,10 +1,25 @@
 package no.knalum.swingcomponents;
 
+import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 
 public class Util {
+
+
+    public static JTextField findTextFieldByName(Container root, String name) {
+        for (Component c : root.getComponents()) {
+            if (c instanceof JTextField tf && name.equals(tf.getName())) {
+                return tf;
+            }
+            if (c instanceof Container) {
+                JTextField child = findTextFieldByName((Container) c, name);
+                if (child != null) return child;
+            }
+        }
+        return null;
+    }
 
 
     public static void setAllChildrenEnabled(boolean enabled, Component[] components) {

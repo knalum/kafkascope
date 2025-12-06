@@ -4,7 +4,6 @@ import com.jgoodies.binding.adapter.BasicComponentFactory;
 import com.jgoodies.binding.beans.PropertyAdapter;
 import no.knalum.KafkaScope;
 import no.knalum.config.BrokerConfig;
-import no.knalum.config.ConfigSaver;
 import no.knalum.kafka.AppKafkaClient;
 import no.knalum.message.ConnectedToBrokerMessage;
 import no.knalum.message.MessageBus;
@@ -25,12 +24,10 @@ public class ConfigDialog extends JDialog {
         JButton okButton = new JButton("Connect");
         okButton.addActionListener(e -> {
             try {
-                Set<String> topics = AppKafkaClient.connect(BrokerConfig.getInstance());
+                Set<String> topics = AppKafkaClient.connect(BrokerConfig.getInstance().getBrokerUrl(), BrokerConfig.getInstance().getSchemaRegistryUrl());
                 MessageBus.getInstance().publish(new ConnectedToBrokerMessage(BrokerConfig.getInstance().getBrokerUrl(), topics));
-                ConfigSaver.saveConfig();
+                //ConfigSaver.saveConfig();
                 dispose();
-
-
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Failed to connect to Kafka Broker: " + BrokerConfig.getInstance().getBrokerUrl() + "\n" + ex.getMessage(),
                         "Error", JOptionPane.ERROR_MESSAGE);

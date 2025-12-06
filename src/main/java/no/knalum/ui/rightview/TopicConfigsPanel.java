@@ -61,7 +61,7 @@ public class TopicConfigsPanel extends JPanel implements MessageListener {
         textField.setEditable(isEditable);
 
         // Optional: align label and text field nicely
-        label.setPreferredSize(new Dimension(200, label.getPreferredSize().height));
+        label.setPreferredSize(new Dimension(100, label.getPreferredSize().height));
         textField.setMaximumSize(new Dimension(Integer.MAX_VALUE, textField.getPreferredSize().height));
 
         panel.add(label);
