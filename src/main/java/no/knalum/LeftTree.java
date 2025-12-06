@@ -8,6 +8,7 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -108,6 +109,15 @@ public class LeftTree extends JPanel implements MyListener {
             this.tree.setModel(originalModel);
             this.tree.expandRow(0);
             tree.updateUI();
+        } else if (message instanceof SelectTreeItemMessage msg) {
+            // Find and select the new topic node
+            DefaultMutableTreeNode root = (DefaultMutableTreeNode) tree.getModel().getRoot();
+            TreePath foundPath = Util.findNodeByName(root, msg.topicName());
+            if (foundPath != null) {
+                tree.setSelectionPath(foundPath);
+                tree.scrollPathToVisible(foundPath);
+                tree.requestFocus();
+            }
         }
     }
 }

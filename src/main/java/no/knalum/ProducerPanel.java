@@ -17,13 +17,14 @@ public class ProducerPanel extends JPanel implements MyListener {
     private JButton sendButton;
 
     public ProducerPanel() {
+        setDoubleBuffered(true);
         setLayout(new BorderLayout());
 
         add(createKeySendPanel(), BorderLayout.NORTH);
         add(createValuePanel(), BorderLayout.CENTER);
 
         MessageBus.getInstance().subscribe(this);
-        Util.setAllChildrenEnabled(false,getComponents());
+        Util.setAllChildrenEnabled(false, getComponents());
     }
 
 

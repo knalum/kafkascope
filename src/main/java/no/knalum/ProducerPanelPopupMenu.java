@@ -9,7 +9,6 @@ public class ProducerPanelPopupMenu extends JPopupMenu implements MyListener {
         JMenuItem exampleJsonMenuItem = new JMenuItem("Set schema example value");
         add(exampleJsonMenuItem);
 
-        exampleJsonMenuItem.setEnabled(false);
         exampleJsonMenuItem.addActionListener(e -> {
             ProducerPanelPopupMenu.this.updateUI();
             String schemaExampleJson = AppKafkaClient.getSchemaExample(selectedTopic);
@@ -21,8 +20,7 @@ public class ProducerPanelPopupMenu extends JPopupMenu implements MyListener {
 
     @Override
     public void handleMessage(AppMessage message) {
-        if(message instanceof TreeTopicChanged){
-            exampleJsonMenuItem.setEnabled(true);
+        if (message instanceof TreeTopicChanged) {
         }
     }
 }

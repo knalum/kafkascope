@@ -9,7 +9,6 @@ import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.MouseEvent;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -24,6 +23,7 @@ public class MessageTable extends JPanel implements MyListener {
     private SwingWorker<Void, Void> activeWorker;
 
     public MessageTable() {
+        setDoubleBuffered(true);
         setLayout(new BorderLayout());
         DefaultTableModel model = new DefaultTableModel(new Object[]{"Time", "Key", "Offset", "Partition", "Headers", "Value"}, 0) {
             @Override
@@ -32,6 +32,7 @@ public class MessageTable extends JPanel implements MyListener {
             }
         };
         this.table = new JTable(model);
+        table.getTableHeader().setReorderingAllowed(false);
         TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
         table.setRowSorter(sorter);
         table.setCellSelectionEnabled(true);
