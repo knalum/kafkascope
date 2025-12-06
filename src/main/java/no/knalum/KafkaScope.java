@@ -1,5 +1,12 @@
 package no.knalum;
 
+import no.knalum.config.BrokerConfig;
+import no.knalum.config.ConfigSaver;
+import no.knalum.kafka.AppKafkaClient;
+import no.knalum.menu.FileMenuBar;
+import no.knalum.swingcomponents.GlobalTextPopupInstaller;
+import no.knalum.ui.MainSplitPane;
+import no.knalum.ui.StatusBar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

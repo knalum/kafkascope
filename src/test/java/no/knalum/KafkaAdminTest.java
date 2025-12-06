@@ -1,5 +1,7 @@
 package no.knalum;
 
+import no.knalum.config.ConfigSaver;
+import no.knalum.kafka.AppKafkaClient;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
