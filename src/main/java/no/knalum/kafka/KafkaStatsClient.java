@@ -1,10 +1,5 @@
 package no.knalum.kafka;
 
-import no.knalum.config.BrokerConfig;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,94 +8,99 @@ import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 public class KafkaStatsClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStatsClient.class);
 
-    public record TopicStats(Long size, Long count, String lastTs, Integer numPartitions) {
+    public record TopicStats(Long size, Long count, Integer numPartitions) {
     }
 
 
     public TopicStats getTopicStats(String topicName) throws Exception {
-        Map<String, String> stats = getStats(Map.of(
-                "size", "kafka.log:type=Log,name=Size,selectedNode=" + topicName + ",*",
-                "count", "kafka.log:type=Log,name=LogEndOffset,selectedNode=" + topicName + ",*"
-        ));
+        long topicSize = getTopicSize(topicName);
+        long topicCount = getTopicCount(topicName);
+        int numberOfPartitions = getNumberOfPartitions(topicName);
 
-        ConsumerStats consumerStats = findTsAndNumPartitions(topicName);
-
-        return new TopicStats(
-                Long.parseLong(stats.get("size") == null ? "-1" : stats.get("size")),
-                Long.parseLong(stats.get("count") == null ? "-1" : stats.get("count")),
-                Instant.ofEpochMilli(consumerStats.lastTs).toString(),
-                consumerStats.numPartitions
-        );
+        return new TopicStats(topicSize, topicCount, numberOfPartitions);
     }
 
-
-    record ConsumerStats(Long lastTs, Integer numPartitions) {
-    }
-
-    ConsumerStats findTsAndNumPartitions(String topic) {
-        ConsumerStats stats;
-        Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BrokerConfig.getInstance().getBrokerUrl());
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "temp");
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, CustomValueDeserializer.class);
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
-        props.put("schema.registry.url", BrokerConfig.getInstance().getSchemaRegistryUrl());
-
-        int numberOfPartitions;
-        Long ts = 0L;
-
-        try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props)) {
-            List<TopicPartition> partitions = new ArrayList<>();
-            for (int p = 0; p < consumer.partitionsFor(topic).size(); p++) {
-                partitions.add(new TopicPartition(topic, p));
-            }
-            numberOfPartitions = consumer.partitionsFor(topic).size();
-
-            consumer.assign(partitions);
-            consumer.seekToEnd(partitions);
-            for (TopicPartition tp : partitions) {
-                long lastOffset = consumer.position(tp) - 1;
-                if (lastOffset >= 0) {
-                    consumer.seek(tp, lastOffset);
-                    ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(1));
-                    ts = records.iterator().next().timestamp();
-                }
-            }
-        }
-
-        return new ConsumerStats(ts, numberOfPartitions);
-    }
-
-    Map<String, String> getStats(Map<String, String> metricNames) {
+    private int getNumberOfPartitions(String topicName) {
+        String jmxUrl = "service:jmx:rmi:///jndi/rmi://localhost:9999/jmxrmi";
+        String pattern = "kafka.log:type=Log,name=LogEndOffset,topic=" + topicName + ",partition=*";
+        Set<Integer> partitions = new HashSet<>();
         try {
-            String jmxUrl = "service:jmx:rmi:///jndi/rmi://localhost:9999/jmxrmi";
-
             JMXServiceURL url = new JMXServiceURL(jmxUrl);
             JMXConnector jmxc = JMXConnectorFactory.connect(url, null);
             MBeanServerConnection mbeanConn = jmxc.getMBeanServerConnection();
-
-            Map<String, String> stats = new HashMap<>();
-            for (Map.Entry<String, String> metricName : metricNames.entrySet()) {
-                Set<ObjectName> mbeans = mbeanConn.queryNames(new ObjectName(metricName.getValue()), null);
-                for (ObjectName mbean : mbeans) {
-                    Long value = (Long) mbeanConn.getAttribute(mbean, "Value");
-                    stats.put(metricName.getKey(), value.toString());
+            Set<ObjectName> mbeans = mbeanConn.queryNames(new ObjectName(pattern), null);
+            for (ObjectName mbean : mbeans) {
+                String key = mbean.getKeyProperty("partition");
+                if (key != null) {
+                    try {
+                        partitions.add(Integer.parseInt(key));
+                    } catch (NumberFormatException ignore) {
+                    }
                 }
             }
-            return stats;
-
+            jmxc.close();
         } catch (Exception ex) {
-            LOGGER.error("Failed to get JMX stats: {}", ex.getMessage());
+            LOGGER.error("Failed to get number of partitions for topic {}: {}", topicName, ex.getMessage());
+            return -1;
         }
-        return Collections.emptyMap();
+        return partitions.size();
     }
+
+    private long getTopicCount(String topicName) {
+        long sum = 0L;
+        String jmxUrl = "service:jmx:rmi:///jndi/rmi://localhost:9999/jmxrmi";
+        String pattern = "kafka.log:type=Log,name=LogEndOffset,topic=" + topicName + ",partition=*";
+        try {
+            JMXServiceURL url = new JMXServiceURL(jmxUrl);
+            JMXConnector jmxc = JMXConnectorFactory.connect(url, null);
+            MBeanServerConnection mbeanConn = jmxc.getMBeanServerConnection();
+            Set<ObjectName> mbeans = mbeanConn.queryNames(new ObjectName(pattern), null);
+            for (ObjectName mbean : mbeans) {
+                Object valueObj = mbeanConn.getAttribute(mbean, "Value");
+                if (valueObj instanceof Long) {
+                    sum += (Long) valueObj;
+                } else if (valueObj instanceof Integer) {
+                    sum += ((Integer) valueObj).longValue();
+                }
+            }
+            jmxc.close();
+        } catch (Exception ex) {
+            LOGGER.error("Failed to get topic count for topic {}: {}", topicName, ex.getMessage());
+            return -1L;
+        }
+        return sum;
+    }
+
+    private long getTopicSize(String topicName) {
+        long sum = 0L;
+        String jmxUrl = "service:jmx:rmi:///jndi/rmi://localhost:9999/jmxrmi";
+        String pattern = "kafka.log:type=Log,name=Size,topic=" + topicName + ",partition=*";
+        try {
+            JMXServiceURL url = new JMXServiceURL(jmxUrl);
+            JMXConnector jmxc = JMXConnectorFactory.connect(url, null);
+            MBeanServerConnection mbeanConn = jmxc.getMBeanServerConnection();
+            Set<ObjectName> mbeans = mbeanConn.queryNames(new ObjectName(pattern), null);
+            for (ObjectName mbean : mbeans) {
+                Object valueObj = mbeanConn.getAttribute(mbean, "Value");
+                if (valueObj instanceof Long) {
+                    sum += (Long) valueObj;
+                } else if (valueObj instanceof Integer) {
+                    sum += ((Integer) valueObj).longValue();
+                }
+            }
+            jmxc.close();
+        } catch (Exception ex) {
+            LOGGER.error("Failed to get topic size for topic {}: {}", topicName, ex.getMessage());
+            return -1L;
+        }
+        return sum;
+    }
+
 }

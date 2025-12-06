@@ -1,12 +1,14 @@
 package no.knalum.ui.treeview;
 
 import no.knalum.kafka.AppKafkaClient;
+import org.apache.kafka.clients.admin.TopicDescription;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Map;
 
 public class TreeContextMenuAdapter extends MouseAdapter {
 
@@ -46,11 +48,13 @@ public class TreeContextMenuAdapter extends MouseAdapter {
                 });
                 popup.add(deleteTopic);
 
-                popup.add(new JMenuItem("Describe") {{
-                    addActionListener(e -> {
-                        AppKafkaClient.describeTopic(selectedNode.getUserObject().toString());
-                    });
-                }});
+                JMenuItem describeItem = new JMenuItem("Describe");
+                describeItem.addActionListener(e2 -> {
+                    String topic = selectedNode.getUserObject().toString();
+                    Map<String, TopicDescription> descriptions = AppKafkaClient.describeTopic(topic);
+                    new TopicDescriptionsModal(descriptions, topic);
+                });
+                popup.add(describeItem);
 
 
                 // Example: enable/disable menu items based on node type

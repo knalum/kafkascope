@@ -56,7 +56,7 @@ public class FileMenuBar extends JMenuBar implements MessageListener {
         public EditMenu() {
             super("Edit");
 
-            add(new JMenuItem("Create new topic") {{
+            add(new JMenuItem("Create new topic...") {{
                 addActionListener(e -> new CreateNewTopicDialog(new Consumer<CreateTopicDialogParams>() {
                     @Override
                     public void accept(CreateTopicDialogParams createTopicDialogParams) {

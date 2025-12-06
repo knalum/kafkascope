@@ -21,7 +21,10 @@ public class TopicConfigsPanel extends JPanel implements MessageListener {
         setLayout(new BorderLayout());
         this.configPanel = new JPanel();
         configPanel.setLayout(new BoxLayout(configPanel, BoxLayout.Y_AXIS));
-        add(new JScrollPane(configPanel), BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(configPanel);
+        // Increase scroll speed for smoother experience
+        scrollPane.getVerticalScrollBar().setUnitIncrement(24);
+        add(scrollPane, BorderLayout.CENTER);
         add(createUpdateButtonRow(), BorderLayout.SOUTH);
 
         MessageBus.getInstance().subscribe(this);

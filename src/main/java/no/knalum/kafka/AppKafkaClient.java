@@ -132,23 +132,16 @@ public class AppKafkaClient {
         return "delete";
     }
 
-    public static void describeTopic(String topic) {
+    public static Map<String, TopicDescription> describeTopic(String topic) {
         String brokerUrl = BrokerConfig.getInstance().getBrokerUrl();
         Properties props = new Properties();
         props.put("bootstrap.servers", brokerUrl);
         try (AdminClient adminClient = AdminClient.create(props)) {
-            var descriptions = adminClient.describeTopics(Collections.singleton(topic)).all().get();
-            var desc = descriptions.get(topic);
-            StringBuilder sb = new StringBuilder();
-            sb.append("Topic: ").append(topic).append("\n");
-            sb.append("Partitions: ").append(desc.partitions().size()).append("\n");
-            desc.partitions().forEach(p -> {
-                sb.append("Partition ").append(p.partition()).append(": leader=").append(p.leader()).append(", replicas=").append(p.replicas()).append(", isr=").append(p.isr()).append("\n");
-            });
-            ErrorModal.showInfo(sb.toString()); // Reuse modal for info
+            return adminClient.describeTopics(Collections.singleton(topic)).all().get();
         } catch (Exception e) {
             ErrorModal.showError("Error describing selectedNode: " + e.getMessage());
         }
+        return null;
     }
 
     public static Collection<ConfigEntry> describeTopic2(String topic) {

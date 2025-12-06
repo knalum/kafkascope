@@ -16,28 +16,32 @@ public class KafkaJmxTest {
     @Test
     void name() throws Exception {
         String jmxUrl = "service:jmx:rmi:///jndi/rmi://localhost:9999/jmxrmi";
-        String topic = "f40b";
+        String topic = "key-topic-2";
 
         JMXServiceURL url = new JMXServiceURL(jmxUrl);
         JMXConnector jmxc = JMXConnectorFactory.connect(url, null);
         MBeanServerConnection mbeanConn = jmxc.getMBeanServerConnection();
+        // Query all MBeans
+        Set<ObjectName> mbeans = mbeanConn.queryNames(null, null);
+        for (ObjectName name : mbeans) {
+            if (name.toString().contains("LogEndOffset")) {
 
-        // Query all log size MBeans for this selectedNode
-        String query = String.format("kafka.log:type=Log,name=Size,selectedNode=%s,*", topic);
-        Set<ObjectName> mbeans = mbeanConn.queryNames(new ObjectName(query), null);
-
-        long totalSize = 0;
-        for (ObjectName mbean : mbeans) {
-            Long size = (Long) mbeanConn.getAttribute(mbean, "Value");
-            String partition = mbean.getKeyProperty("partition");
-            System.out.printf("Partition %s size: %d bytes%n", partition, size);
-            totalSize += size;
+                System.out.println(name);
+            }
         }
-
-        System.out.println("Total selectedNode size: " + totalSize + " bytes");
-
         jmxc.close();
     }
 
-
+    @Test
+    void getJmxAttributeForMbeanName() throws Exception {
+        String jmxUrl = "service:jmx:rmi:///jndi/rmi://localhost:9999/jmxrmi";
+        String mBeanName = "kafka.log:type=Log,name=LogEndOffset,topic=key-topic-2,partition=0";
+        JMXServiceURL url = new JMXServiceURL(jmxUrl);
+        JMXConnector jmxc = JMXConnectorFactory.connect(url, null);
+        MBeanServerConnection mbeanConn = jmxc.getMBeanServerConnection();
+        ObjectName objectName = new ObjectName(mBeanName);
+        Object value = mbeanConn.getAttribute(objectName, "Value");
+        System.out.println("Value for " + mBeanName + ": " + value);
+        jmxc.close();
+    }
 }

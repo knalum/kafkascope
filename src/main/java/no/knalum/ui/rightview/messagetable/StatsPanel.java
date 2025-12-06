@@ -1,6 +1,5 @@
 package no.knalum.ui.rightview.messagetable;
 
-import no.knalum.kafka.AppKafkaClient;
 import no.knalum.kafka.KafkaStatsClient;
 import no.knalum.message.*;
 import no.knalum.ui.treeview.node.TopicNode;
@@ -20,7 +19,6 @@ public class StatsPanel extends JPanel implements MessageListener {
     private final JPanel countField;
     private final JPanel sizeField;
     private final JPanel partitionsField;
-    private final JPanel recordField;
     private DefaultMutableTreeNode selectedTopic;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StatsPanel.class);
@@ -35,7 +33,14 @@ public class StatsPanel extends JPanel implements MessageListener {
         configPanel.add(this.countField = createRow("Count", "", false));
         configPanel.add(this.sizeField = createRow("Size", "", false));
         configPanel.add(this.partitionsField = createRow("Partitions", "", false));
-        configPanel.add(this.recordField = createRow("Last record", "", false));
+
+        JButton refreshButton = new JButton("Refresh");
+        refreshButton.addActionListener(e -> {
+            if (selectedTopic != null && selectedTopic instanceof TopicNode) {
+                getStats(selectedTopic.toString());
+            }
+        });
+        configPanel.add(refreshButton);
 
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(
                 () -> {
@@ -68,7 +73,6 @@ public class StatsPanel extends JPanel implements MessageListener {
 
 
     private void getStats(String selectedTopic) {
-        AppKafkaClient.getNumRecords(selectedTopic);
         try {
             KafkaStatsClient.TopicStats topicStats = new KafkaStatsClient().getTopicStats(selectedTopic);
             populateStatsPanel(topicStats);
@@ -82,7 +86,6 @@ public class StatsPanel extends JPanel implements MessageListener {
         findTextFieldByName(this.getRootPane(), "Size").setText(String.valueOf(topicStats.size()));
         findTextFieldByName(this.getRootPane(), "Count").setText(String.valueOf(topicStats.count()));
         findTextFieldByName(this.getRootPane(), "Partitions").setText(String.valueOf(topicStats.numPartitions()));
-        findTextFieldByName(this.getRootPane(), "Last record").setText(String.valueOf(topicStats.lastTs()));
 
         revalidate();
         repaint();
