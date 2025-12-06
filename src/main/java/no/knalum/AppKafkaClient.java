@@ -14,11 +14,11 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
+import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
@@ -92,6 +92,39 @@ public class AppKafkaClient {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static void createTopic(Params params) {
+        String brokerUrl = BrokerConfig.getInstance().getBrokerUrl();
+        Properties props = new Properties();
+        props.put("bootstrap.servers", brokerUrl);
+        try (AdminClient adminClient = AdminClient.create(props)) {
+            Map<String, String> topicConfig = Map.of(
+                    TopicConfig.CLEANUP_POLICY_CONFIG, getCleanupPolicy(params.cleanupPolicy()),
+                    TopicConfig.RETENTION_MS_CONFIG, String.valueOf(params.retention())
+            );
+
+            NewTopic newTopic = new NewTopic(
+                    params.topicName(),
+                    params.partitions(),
+                    (short) params.replication()
+            );
+            newTopic.configs(topicConfig);
+            adminClient.createTopics(Collections.singletonList(newTopic)).all().get();
+        } catch (Exception e) {
+            if (e.getMessage().contains("Invalid replication factor")) {
+                ErrorModal.showError(e.getMessage());
+            } else {
+                ErrorModal.showError(e.getMessage());
+            }
+        }
+    }
+
+    private static String getCleanupPolicy(String s) {
+        if (Objects.equals(s, "delete")) return TopicConfig.CLEANUP_POLICY_DELETE;
+        else if (Objects.equals(s, "compact")) return TopicConfig.CLEANUP_POLICY_COMPACT;
+        else if (Objects.equals(s, "delete+compact")) return "compact+delete";
+        return "delete";
     }
 
     public static void describeTopic(String topic) {
@@ -186,7 +219,7 @@ public class AppKafkaClient {
         return -1;
     }
 
-    public static String getSchemaExample(String  selectedNode) {
+    public static String getSchemaExample(String selectedNode) {
         String schemaForTopic = getSchemaForTopic(selectedNode);
         return transformAvroSchemaToExampleJson(schemaForTopic);
     }
@@ -205,7 +238,7 @@ public class AppKafkaClient {
     }
 
 
-    public static String transformAvroSchemaToExampleJson(String avroSchema)  {
+    public static String transformAvroSchemaToExampleJson(String avroSchema) {
 
         Schema schema = new Schema.Parser().parse(avroSchema);
         try {

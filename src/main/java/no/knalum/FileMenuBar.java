@@ -3,7 +3,7 @@ package no.knalum;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.Set;
-import java.util.UUID;
+import java.util.function.Consumer;
 
 public class FileMenuBar extends JMenuBar implements MyListener {
     private final KafkaScope kafkaScope;
@@ -48,18 +48,20 @@ public class FileMenuBar extends JMenuBar implements MyListener {
             super("Edit");
 
             add(new JMenuItem("Create new topic") {{
-                addActionListener(e -> {
-                    String topicName = UUID.randomUUID().toString().substring(0, 8);
-                    AppKafkaClient.createTopic(topicName);
-                    AppKafkaClient.connectToKafkaAndPopulateTree();
-                    try {
-                        Set<String> topics = AppKafkaClient.connect(BrokerConfig.getInstance());
-                        MessageBus.getInstance().publish(new ConnectedToBrokerMessage(BrokerConfig.getInstance().getBrokerUrl(), topics));
-                        MessageBus.getInstance().publish(new SelectTreeItemMessage(topicName));
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
+                addActionListener(e -> new CreateNewTopicDialog(new Consumer<Params>() {
+                    @Override
+                    public void accept(Params params) {
+                        try {
+                            AppKafkaClient.createTopic(params);
+                            Set<String> topics = AppKafkaClient.connect(BrokerConfig.getInstance());
+                            MessageBus.getInstance().publish(new ConnectedToBrokerMessage(BrokerConfig.getInstance().getBrokerUrl(), topics));
+                            MessageBus.getInstance().publish(new SelectTreeItemMessage(params.topicName()));
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+
                     }
-                });
+                }).setVisible(true));
             }});
 
             JMenuItem refreshItem = new JMenuItem("Refresh topics");

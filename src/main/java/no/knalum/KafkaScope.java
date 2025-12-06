@@ -43,8 +43,8 @@ public class KafkaScope extends JFrame {
             try {
                 Image icon = Toolkit.getDefaultToolkit().getImage(KafkaScope.class.getResource("/logo.png"));
                 taskbar.setIconImage(icon);
-            } catch (UnsupportedOperationException e) {
-                System.err.println("Custom Dock icon not supported");
+            } catch (UnsupportedOperationException ignored) {
+
             }
         }
     }

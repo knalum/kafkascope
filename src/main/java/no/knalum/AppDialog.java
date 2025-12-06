@@ -13,6 +13,10 @@ public class AppDialog extends JDialog {
         super(parent, title, true);
         setLayout(new BorderLayout());
 
+        getRootPane().registerKeyboardAction(e -> dispose(),
+                KeyStroke.getKeyStroke("ESCAPE"),
+                JComponent.WHEN_IN_FOCUSED_WINDOW);
+
         JPanel buttonPanel = new JPanel();
         if (okButtonLabel != null) {
             JButton okButton = new JButton(okButtonLabel);
