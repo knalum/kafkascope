@@ -307,4 +307,16 @@ public class AppKafkaClient {
     public static void connectToKafkaAndPopulateTree(BrokerDialogSettings cb) {
         connectToKafkaAndPopulateTree(cb.broker(), cb.schemaReg());
     }
+
+    public static String getAvroSchemaForTopic(String topic) {
+        SchemaRegistryClient client =
+                new io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient(BrokerConfig.getInstance().getSchemaRegistryUrl(), 10);
+        SchemaMetadata metadata = null;
+        try {
+            metadata = client.getLatestSchemaMetadata(topic + "-value");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return metadata.getSchema();
+    }
 }

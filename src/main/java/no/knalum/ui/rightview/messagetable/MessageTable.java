@@ -3,6 +3,7 @@ package no.knalum.ui.rightview.messagetable;
 import no.knalum.kafka.AppKafkaClient;
 import no.knalum.kafka.AppKafkaMessageTableClient;
 import no.knalum.message.*;
+import no.knalum.swingcomponents.common.TextAreaDialog;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 
@@ -59,7 +60,7 @@ public class MessageTable extends JPanel implements MessageListener {
                 // Value column is index 5
                 if (row != -1 && col == 5) {
                     Object value = table.getValueAt(row, col);
-                    new MessageTableValueDialog(table).getJDialog(value).setVisible(true);
+                    new TextAreaDialog(value.toString()).setVisible(true);
                 }
             }
         });

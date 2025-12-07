@@ -23,6 +23,7 @@ public class MenuBar extends JMenuBar implements MessageListener {
 
         add(new FileMenu());
         add(new EditMenu());
+        add(new TopicMenu());
         add(new ViewMenu());
         add(new Help());
 

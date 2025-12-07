@@ -1,7 +1,6 @@
 package no.knalum;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
@@ -15,6 +14,8 @@ import org.apache.kafka.clients.producer.RecordMetadata;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Properties;
 import java.util.concurrent.Future;
 
@@ -23,13 +24,11 @@ public class KafkaAvroProducerTest {
     @Test
     void sendJsonRecordAndEncodeItAsAvro() throws Exception {
         // Avro schema
-        String schemaString = """
-                {"type":"record","name":"User","fields":[{"name":"name","type":"string"},{"name":"age","type":"int"}]}
-                """;
-        Schema schema = new Schema.Parser().parse(schemaString);
+        String avroJsonSchema = Files.readString(Path.of(getClass().getResource("/person-schema.json").toURI()));
+        Schema schema = new Schema.Parser().parse(avroJsonSchema);
 
         // JSON record
-        String json = new ObjectMapper().writeValueAsString(new Person("Alice", 30));
+        String json = new ObjectMapper().writeValueAsString(new Person("Alice", 30, "A"));
 
         JsonDecoder decoder = DecoderFactory.get().jsonDecoder(schema, json);
         SpecificDatumReader<GenericRecord> reader = new SpecificDatumReader<>(schema);
@@ -43,7 +42,7 @@ public class KafkaAvroProducerTest {
         props.put("schema.registry.url", "http://localhost:8081");
 
         KafkaProducer<String, GenericRecord> producer = new KafkaProducer<>(props);
-        String topic = "test-avro-topic22";
+        String topic = "test-avro-topic30";
         ProducerRecord<String, GenericRecord> record = new ProducerRecord<>(topic, "key1", avroRecord);
         Future<RecordMetadata> future = producer.send(record);
         RecordMetadata metadata = future.get();
@@ -51,7 +50,8 @@ public class KafkaAvroProducerTest {
         producer.close();
     }
 
-    record Person(String name,int age){}
+    record Person(String name, int age, String address) {
+    }
 
     @Test
     void sendExampleAvro1RecordToKafka() throws Exception {
