@@ -11,6 +11,7 @@ import org.jdesktop.swingx.prompt.PromptSupport;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 
 public class ProducerPanel extends JPanel implements MessageListener {
     private RSyntaxTextArea recordValue;
@@ -71,8 +72,7 @@ public class ProducerPanel extends JPanel implements MessageListener {
         recordValue.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JSON);
         recordValue.setCodeFoldingEnabled(true);
 
-        KeyStroke cmdEnter = KeyStroke.getKeyStroke("meta ENTER");
-        recordValue.getInputMap().put(cmdEnter, "sendMessage");
+        recordValue.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()), "sendMessage");
         recordValue.getActionMap().put("sendMessage", new AbstractAction() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent e) {

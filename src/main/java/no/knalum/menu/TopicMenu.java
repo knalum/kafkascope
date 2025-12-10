@@ -1,14 +1,18 @@
 package no.knalum.menu;
 
+import no.knalum.config.BrokerConfig;
 import no.knalum.kafka.AppKafkaClient;
-import no.knalum.message.AppMessage;
-import no.knalum.message.MessageBus;
-import no.knalum.message.MessageListener;
-import no.knalum.message.TreeTopicChangedMessage;
+import no.knalum.menu.dialog.CreateNewTopicDialog;
+import no.knalum.menu.dialog.CreateTopicDialogParams;
+import no.knalum.message.*;
 import no.knalum.swingcomponents.common.TextAreaDialog;
 import no.knalum.ui.treeview.node.TopicNode;
 
 import javax.swing.*;
+import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.util.Set;
+import java.util.function.Consumer;
 
 public class TopicMenu extends JMenu implements MessageListener {
     private final JMenuItem displaySchemaMenuItem;
@@ -16,6 +20,29 @@ public class TopicMenu extends JMenu implements MessageListener {
 
     public TopicMenu() {
         super("Topic");
+        add(new JMenuItem("Create new topic...") {{
+            addActionListener(e -> new CreateNewTopicDialog(new Consumer<CreateTopicDialogParams>() {
+                @Override
+                public void accept(CreateTopicDialogParams createTopicDialogParams) {
+                    try {
+                        AppKafkaClient.createTopic(createTopicDialogParams);
+                        Set<String> topics = AppKafkaClient.connect(BrokerConfig.getInstance().getBrokerUrl(), BrokerConfig.getInstance().getSchemaRegistryUrl());
+                        MessageBus.getInstance().publish(new ConnectedToBrokerMessage(BrokerConfig.getInstance().getBrokerUrl(), topics));
+                        MessageBus.getInstance().publish(new SelectTreeItemMessage(createTopicDialogParams.topicName()));
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+
+                }
+            }).setVisible(true));
+        }});
+        JMenuItem refreshItem = new JMenuItem("Refresh topics");
+        refreshItem.addActionListener(e -> {
+            AppKafkaClient.connectToKafkaAndPopulateTree(BrokerConfig.getInstance().getConfig());
+        });
+        refreshItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
+        add(refreshItem);
+
         add(this.displaySchemaMenuItem = new JMenuItem("Display schema") {{
             setEnabled(false);
             addActionListener(e -> {

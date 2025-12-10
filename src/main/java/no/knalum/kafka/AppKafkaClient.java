@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
+import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import no.knalum.config.BrokerConfig;
 import no.knalum.menu.BrokerDialogSettings;
 import no.knalum.menu.dialog.CreateTopicDialogParams;
@@ -13,6 +14,10 @@ import no.knalum.message.ConnectedToBrokerMessage;
 import no.knalum.message.MessageBus;
 import no.knalum.modal.ErrorModal;
 import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.DecoderFactory;
+import org.apache.avro.io.JsonDecoder;
+import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -52,16 +57,42 @@ public class AppKafkaClient {
     }
 
     public static void sendMessageToBroker(String topic, String key, String value, Integer partition) {
+        String schemaForTopic = getSchemaForTopic(topic);
+        KafkaProducer<String, Object> producer = null;
         String broker = BrokerConfig.getInstance().getBrokerUrl();
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, broker);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        KafkaProducer<String, String> producer = null;
+        props.put("schema.registry.url", "http://localhost:8081");
+
+        Object recordValue;
+        if (schemaForTopic == null) {
+            props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+            recordValue = value;
+        } else {
+            LOGGER.info("Using schema for topic {}", schemaForTopic);
+            props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class.getName());
+
+
+            Schema schema = new Schema.Parser().parse(schemaForTopic);
+            JsonDecoder decoder = null;
+            try {
+                decoder = DecoderFactory.get().jsonDecoder(schema, value);
+                SpecificDatumReader<GenericRecord> reader = new SpecificDatumReader<>(schema);
+                recordValue = reader.read(null, decoder);
+            } catch (Exception e) {
+                e.printStackTrace();
+                ErrorModal.showError("Error " + e.getMessage());
+                return;
+            }
+        }
+
+
         try {
             producer = new KafkaProducer<>(props);
-            producer.send(new ProducerRecord<>(topic, partition, key, value));
+            producer.send(new ProducerRecord<>(topic, partition, key, recordValue));
         } catch (Exception e) {
+            e.printStackTrace();
             ErrorModal.showError("Error sending message to broker: " + e.getMessage());
             LOGGER.error("Error sending message to broker: {}", e.getMessage());
         } finally {
@@ -231,7 +262,7 @@ public class AppKafkaClient {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return topic;
+        return null;
     }
 
 
@@ -319,4 +350,6 @@ public class AppKafkaClient {
         }
         return metadata.getSchema();
     }
+
+
 }

@@ -1,19 +1,26 @@
 package no.knalum.ui.treeview;
 
+import no.knalum.KafkaScope;
+import no.knalum.menu.dialog.AppDialog;
 import org.apache.kafka.clients.admin.TopicDescription;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.Map;
 
-public class TopicDescriptionsModal extends JDialog {
+public class TopicDescriptionsModal extends AppDialog {
     public TopicDescriptionsModal(Map<String, TopicDescription> descriptions, String topic) {
+        super(KafkaScope.getInstance(), "Topic description", createContent(descriptions, topic));
         setTitle("Topic Description: " + topic);
         setModal(true);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout());
-        setPreferredSize(new Dimension(800, 600));
+        setPreferredSize(new Dimension(500, 400));
 
+        setLocationRelativeTo(null);
+    }
+
+    private static JScrollPane createContent(Map<String, TopicDescription> descriptions, String topic) {
         var desc = descriptions.get(topic);
         StringBuilder sb = new StringBuilder();
         sb.append("<html><body style='font-family:sans-serif;'>");
@@ -32,17 +39,8 @@ public class TopicDescriptionsModal extends JDialog {
 
         JEditorPane editorPane = new JEditorPane("text/html", sb.toString());
         editorPane.setEditable(false);
-        JScrollPane scrollPane = new JScrollPane(editorPane);
-        add(scrollPane, BorderLayout.CENTER);
-
-        JButton closeButton = new JButton("Close");
-        closeButton.addActionListener(e -> dispose());
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.add(closeButton);
-        add(buttonPanel, BorderLayout.SOUTH);
-
-        pack();
-        setLocationRelativeTo(null);
-        setVisible(true);
+        JPanel jPanel = new JPanel();
+        jPanel.add(editorPane);
+        return new JScrollPane(jPanel);
     }
 }

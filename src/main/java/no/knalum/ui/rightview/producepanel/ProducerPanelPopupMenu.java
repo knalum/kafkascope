@@ -9,14 +9,19 @@ public class ProducerPanelPopupMenu extends JPopupMenu implements MessageListene
     private JMenuItem exampleJsonMenuItem;
 
     public ProducerPanelPopupMenu(String selectedTopic) {
-        JMenuItem exampleJsonMenuItem = new JMenuItem("Set schema example value");
-        add(exampleJsonMenuItem);
+        add(new JMenuItem("Set schema example value") {{
+            addActionListener(e -> {
+                ProducerPanelPopupMenu.this.updateUI();
+                String schemaExampleJson = AppKafkaClient.getSchemaExample(selectedTopic);
+                MessageBus.getInstance().publish(new SchemaJsonExampleMessage(schemaExampleJson));
+            });
+        }});
 
-        exampleJsonMenuItem.addActionListener(e -> {
-            ProducerPanelPopupMenu.this.updateUI();
-            String schemaExampleJson = AppKafkaClient.getSchemaExample(selectedTopic);
-            MessageBus.getInstance().publish(new SchemaJsonExampleMessage(schemaExampleJson));
-        });
+        add(new JMenuItem("Set value schema") {{
+            addActionListener(e -> {
+                new SetSchemaDialog().setVisible(true);
+            });
+        }});
 
         MessageBus.getInstance().subscribe(this);
     }
