@@ -7,6 +7,17 @@ import java.awt.*;
 
 public class Util {
 
+    public static void centerMainFrame(JFrame frame) {
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice primary = ge.getDefaultScreenDevice();
+        Rectangle bounds = primary.getDefaultConfiguration().getBounds();
+
+        int x = bounds.x + (bounds.width - frame.getWidth()) / 2;
+        int y = bounds.y + (bounds.height - frame.getHeight()) / 2;
+
+        frame.setLocation(x, y);
+    }
+
 
     public static JTextField findTextFieldByName(Container root, String name) {
         for (Component c : root.getComponents()) {

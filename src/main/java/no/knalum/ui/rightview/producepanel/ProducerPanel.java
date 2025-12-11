@@ -104,6 +104,9 @@ public class ProducerPanel extends JPanel implements MessageListener {
         for (int i = 0; i < integer.intValue(); i++) {
             partitionField.addItem(i);
         }
+        if (partitionField.getItemCount() == 0) {
+            partitionField.addItem(0);
+        }
         updateUI();
     }
 }

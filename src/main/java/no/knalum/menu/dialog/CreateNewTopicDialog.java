@@ -1,13 +1,15 @@
 package no.knalum.menu.dialog;
 
+import no.knalum.KafkaScope;
+
 import javax.swing.*;
 import java.awt.*;
 import java.util.function.Consumer;
 
 public class CreateNewTopicDialog extends JDialog {
     public CreateNewTopicDialog(Consumer<CreateTopicDialogParams> cb) {
+        super(KafkaScope.getInstance(), "Create New Topic", false);
         setTitle("Create New Topic");
-        setModal(true);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setSize(400, 320);
         setLocationRelativeTo(null);
