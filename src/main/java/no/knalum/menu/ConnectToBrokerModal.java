@@ -15,7 +15,7 @@ public class ConnectToBrokerModal extends JDialog {
     private final JPanel schemaRow;
 
     public ConnectToBrokerModal(Consumer<BrokerDialogSettings> cb) {
-        super(KafkaScope.getInstance(), "Connect to Broker", true);
+        super(KafkaScope.getInstance(), "Connect to Broker", false);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
         setSize(400, 120);

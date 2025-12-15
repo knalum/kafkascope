@@ -1,5 +1,6 @@
 package no.knalum.swingcomponents.common;
 
+import no.knalum.KafkaScope;
 import no.knalum.swingcomponents.UserSettingsConfig;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
@@ -12,6 +13,7 @@ public class TextAreaDialog extends JDialog {
     private final RSyntaxTextArea textArea;
 
     public TextAreaDialog(String value, boolean editable) {
+        super(KafkaScope.getInstance(), "Value", true);
 
         this.textArea = new RSyntaxTextArea(20, 60);
         textArea.setEditable(editable);

@@ -14,6 +14,7 @@ import java.util.Set;
 public class KafkaStatsClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStatsClient.class);
+    public static final String SERVICE_JMX_RMI_JNDI_RMI_LOCALHOST_9999_JMXRMI = "service:jmx:rmi:///jndi/rmi://localhost:31001/jmxrmi";
 
     public record TopicStats(Long size, Long count, Integer numPartitions) {
     }
@@ -28,11 +29,10 @@ public class KafkaStatsClient {
     }
 
     private int getNumberOfPartitions(String topicName) {
-        String jmxUrl = "service:jmx:rmi:///jndi/rmi://localhost:9999/jmxrmi";
         String pattern = "kafka.log:type=Log,name=LogEndOffset,topic=" + topicName + ",partition=*";
         Set<Integer> partitions = new HashSet<>();
         try {
-            JMXServiceURL url = new JMXServiceURL(jmxUrl);
+            JMXServiceURL url = new JMXServiceURL(SERVICE_JMX_RMI_JNDI_RMI_LOCALHOST_9999_JMXRMI);
             JMXConnector jmxc = JMXConnectorFactory.connect(url, null);
             MBeanServerConnection mbeanConn = jmxc.getMBeanServerConnection();
             Set<ObjectName> mbeans = mbeanConn.queryNames(new ObjectName(pattern), null);
@@ -55,10 +55,9 @@ public class KafkaStatsClient {
 
     private long getTopicCount(String topicName) {
         long sum = 0L;
-        String jmxUrl = "service:jmx:rmi:///jndi/rmi://localhost:9999/jmxrmi";
         String pattern = "kafka.log:type=Log,name=LogEndOffset,topic=" + topicName + ",partition=*";
         try {
-            JMXServiceURL url = new JMXServiceURL(jmxUrl);
+            JMXServiceURL url = new JMXServiceURL(SERVICE_JMX_RMI_JNDI_RMI_LOCALHOST_9999_JMXRMI);
             JMXConnector jmxc = JMXConnectorFactory.connect(url, null);
             MBeanServerConnection mbeanConn = jmxc.getMBeanServerConnection();
             Set<ObjectName> mbeans = mbeanConn.queryNames(new ObjectName(pattern), null);
@@ -80,10 +79,9 @@ public class KafkaStatsClient {
 
     private long getTopicSize(String topicName) {
         long sum = 0L;
-        String jmxUrl = "service:jmx:rmi:///jndi/rmi://localhost:9999/jmxrmi";
         String pattern = "kafka.log:type=Log,name=Size,topic=" + topicName + ",partition=*";
         try {
-            JMXServiceURL url = new JMXServiceURL(jmxUrl);
+            JMXServiceURL url = new JMXServiceURL(SERVICE_JMX_RMI_JNDI_RMI_LOCALHOST_9999_JMXRMI);
             JMXConnector jmxc = JMXConnectorFactory.connect(url, null);
             MBeanServerConnection mbeanConn = jmxc.getMBeanServerConnection();
             Set<ObjectName> mbeans = mbeanConn.queryNames(new ObjectName(pattern), null);

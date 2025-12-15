@@ -14,6 +14,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.Date;
 
+import static no.knalum.swingcomponents.Util.centerMainFrame;
+
 public class KafkaScope extends JFrame {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaScope.class);
@@ -41,6 +43,7 @@ public class KafkaScope extends JFrame {
         GlobalTextPopupInstaller.install();
 
         kafkaScope = new KafkaScope();
+        centerMainFrame(kafkaScope);
         kafkaScope.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         kafkaScope.setSize(1000, 700);
         kafkaScope.setLocationRelativeTo(null);
