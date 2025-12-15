@@ -6,6 +6,7 @@ import no.knalum.menu.dialog.CreateNewTopicDialog;
 import no.knalum.menu.dialog.CreateTopicDialogParams;
 import no.knalum.message.*;
 import no.knalum.swingcomponents.common.TextAreaDialog;
+import no.knalum.ui.rightview.producepanel.SetSchemaDialog;
 import no.knalum.ui.treeview.node.TopicNode;
 
 import javax.swing.*;
@@ -55,11 +56,28 @@ public class TopicMenu extends JMenu implements MessageListener {
                 } catch (Exception ex) {
                     prettySchema = schemaForTopic; // fallback to raw if not valid JSON
                 }
-                TextAreaDialog textAreaDialog = new TextAreaDialog(prettySchema);
+                TextAreaDialog textAreaDialog = new TextAreaDialog(prettySchema, false);
                 textAreaDialog.setTitle("Schema for " + selectedTopic);
                 textAreaDialog.setVisible(true);
             });
         }});
+
+        add(new JSeparator(JSeparator.HORIZONTAL));
+
+        add(new JMenuItem("Set schema example value") {{
+            addActionListener(e -> {
+                TopicMenu.this.updateUI();
+                String schemaExampleJson = AppKafkaClient.getSchemaExample(selectedTopic);
+                MessageBus.getInstance().publish(new SchemaJsonExampleMessage(schemaExampleJson));
+            });
+        }});
+
+        add(new JMenuItem("Set schema for topic") {{
+            addActionListener(e -> {
+                new SetSchemaDialog(selectedTopic).withTitle("Set schema for topic").setVisible(true);
+            });
+        }});
+
         MessageBus.getInstance().subscribe(this);
     }
 

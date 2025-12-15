@@ -1,7 +1,9 @@
 package no.knalum.ui.rightview.producepanel;
 
-import no.knalum.kafka.AppKafkaClient;
-import no.knalum.message.*;
+import no.knalum.message.AppMessage;
+import no.knalum.message.MessageBus;
+import no.knalum.message.MessageListener;
+import no.knalum.message.TreeTopicChangedMessage;
 
 import javax.swing.*;
 
@@ -9,19 +11,7 @@ public class ProducerPanelPopupMenu extends JPopupMenu implements MessageListene
     private JMenuItem exampleJsonMenuItem;
 
     public ProducerPanelPopupMenu(String selectedTopic) {
-        add(new JMenuItem("Set schema example value") {{
-            addActionListener(e -> {
-                ProducerPanelPopupMenu.this.updateUI();
-                String schemaExampleJson = AppKafkaClient.getSchemaExample(selectedTopic);
-                MessageBus.getInstance().publish(new SchemaJsonExampleMessage(schemaExampleJson));
-            });
-        }});
 
-        add(new JMenuItem("Set value schema") {{
-            addActionListener(e -> {
-                new SetSchemaDialog().setVisible(true);
-            });
-        }});
 
         MessageBus.getInstance().subscribe(this);
     }

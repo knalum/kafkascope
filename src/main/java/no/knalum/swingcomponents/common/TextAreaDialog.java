@@ -9,10 +9,12 @@ import javax.swing.*;
 import java.awt.*;
 
 public class TextAreaDialog extends JDialog {
-    public TextAreaDialog(String value) {
+    private final RSyntaxTextArea textArea;
 
-        RSyntaxTextArea textArea = new RSyntaxTextArea(20, 60);
-        textArea.setEditable(false);
+    public TextAreaDialog(String value, boolean editable) {
+
+        this.textArea = new RSyntaxTextArea(20, 60);
+        textArea.setEditable(editable);
         textArea.setText(value != null ? value : "");
         textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JSON);
         textArea.setCodeFoldingEnabled(true);
@@ -42,5 +44,14 @@ public class TextAreaDialog extends JDialog {
                 JComponent.WHEN_IN_FOCUSED_WINDOW);
         setFocusable(true);
         setFocusTraversalKeysEnabled(false);
+    }
+
+    public TextAreaDialog withTitle(String title) {
+        setTitle(title);
+        return this;
+    }
+
+    public RSyntaxTextArea getTextArea() {
+        return textArea;
     }
 }

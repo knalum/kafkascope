@@ -19,7 +19,7 @@ public class MessageTableValueDialog extends MouseAdapter {
             int col = table.columnAtPoint(e.getPoint());
             if (col == table.getColumnCount() - 1 && row != -1) {
                 Object value = table.getValueAt(row, col);
-                new TextAreaDialog(value.toString()).setVisible(true);
+                new TextAreaDialog(value.toString(), false).withTitle("Value").setVisible(true);
             }
         }
     }

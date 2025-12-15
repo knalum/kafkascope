@@ -2,6 +2,7 @@ package no.knalum.ui.treeview;
 
 import no.knalum.config.BrokerConfig;
 import no.knalum.kafka.AppKafkaClient;
+import no.knalum.ui.treeview.node.TopicNode;
 import org.apache.kafka.clients.admin.TopicDescription;
 
 import javax.swing.*;
@@ -40,6 +41,9 @@ public class TreeContextMenuAdapter extends MouseAdapter {
             if (path != null) {
                 DefaultMutableTreeNode selectedNode =
                         (DefaultMutableTreeNode) path.getLastPathComponent();
+                if (!(selectedNode instanceof TopicNode)) {
+                    return;
+                }
 
                 JPopupMenu popup = new JPopupMenu();
                 JMenuItem deleteTopic = new JMenuItem("Delete topic");

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import no.knalum.config.BrokerConfig;
 import no.knalum.menu.BrokerDialogSettings;
@@ -30,6 +31,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
@@ -259,7 +261,9 @@ public class AppKafkaClient {
 
             String schema = data.getSchema();
             return schema;
-        } catch (Exception e) {
+        } catch (RestClientException e) {
+            // NOOP: Topic does not have schema
+        } catch (IOException e) {
             e.printStackTrace();
         }
         return null;
@@ -352,4 +356,22 @@ public class AppKafkaClient {
     }
 
 
+    /**
+     * Sets the Avro schema for a topic in the Schema Registry.
+     *
+     * @param topic      The topic name (without -value suffix)
+     * @param avroSchema The Avro schema as a String
+     */
+    public static void setSchemaForTopic(String topic, String avroSchema) {
+        String schemaRegistryUrl = BrokerConfig.getInstance().getSchemaRegistryUrl();
+        SchemaRegistryClient client = new CachedSchemaRegistryClient(schemaRegistryUrl, 10);
+        try {
+            // Register the schema for topic-value subject
+            int id = client.register(topic + "-value", new Schema.Parser().parse(avroSchema));
+            LOGGER.info("Registered schema for {}-value with id {}", topic, id);
+        } catch (Exception e) {
+            LOGGER.error("Error registering schema for topic {}: {}", topic, e.getMessage());
+            ErrorModal.showError("Error registering schema: " + e.getMessage());
+        }
+    }
 }

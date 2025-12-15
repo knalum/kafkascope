@@ -47,11 +47,6 @@ public class ProducerPanel extends JPanel implements MessageListener {
             setToolTipText("Partition");
         }});
 
-        jPanel.add(this.moreMenu = new JButton("...") {{
-            setEnabled(false);
-            addActionListener(e -> new ProducerPanelPopupMenu(selectedTopic).show(this, 0, this.getHeight()));
-        }});
-
         jPanel.add(this.sendButton = new JButton("Send") {{
             setEnabled(false);
             addActionListener(e -> {

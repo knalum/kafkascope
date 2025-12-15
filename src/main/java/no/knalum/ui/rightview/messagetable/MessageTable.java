@@ -60,7 +60,7 @@ public class MessageTable extends JPanel implements MessageListener {
                 // Value column is index 5
                 if (row != -1 && col == 5) {
                     Object value = table.getValueAt(row, col);
-                    new TextAreaDialog(value.toString()).setVisible(true);
+                    new TextAreaDialog(value.toString(), false).setVisible(true);
                 }
             }
         });

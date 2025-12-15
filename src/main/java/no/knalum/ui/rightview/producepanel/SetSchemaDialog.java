@@ -1,13 +1,20 @@
 package no.knalum.ui.rightview.producepanel;
 
-import javax.swing.*;
+import no.knalum.kafka.AppKafkaClient;
+import no.knalum.swingcomponents.common.TextAreaDialog;
 
-public class SetSchemaDialog extends JDialog {
-    SetSchemaDialog() {
+import javax.swing.*;
+import java.awt.*;
+
+public class SetSchemaDialog extends TextAreaDialog {
+    public SetSchemaDialog(String selectedTopic) {
+        super("", true);
         setSize(500, 400);
 
-        // AppKafkaClient.getSchemas();
-        add(new JTextField("Schema name"));
-        //   add(new JList<>(schemas));
+        add(new JButton("Set schema") {{
+            addActionListener(e -> {
+                AppKafkaClient.setSchemaForTopic(selectedTopic, getTextArea().getText());
+            });
+        }}, BorderLayout.SOUTH);
     }
 }
