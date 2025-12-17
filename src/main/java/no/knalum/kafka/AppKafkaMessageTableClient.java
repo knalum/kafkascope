@@ -1,6 +1,7 @@
 package no.knalum.kafka;
 
 import no.knalum.config.BrokerConfig;
+import no.knalum.ui.rightview.messagetable.SearchFilter;
 import no.knalum.ui.rightview.messagetable.SortPane;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -11,10 +12,7 @@ import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Consumer;
 
 public class AppKafkaMessageTableClient {
@@ -42,7 +40,7 @@ public class AppKafkaMessageTableClient {
         return instance;
     }
 
-    public List<ConsumerRecord<String, Object>> getRecords(String topic, SortPane.SortType sortChoice, int currentPage) {
+    public List<ConsumerRecord<String, Object>> getRecords(String topic, SortPane.SortType sortChoice, int currentPage, SearchFilter searchFilter) {
         List<ConsumerRecord<String, Object>> result = new ArrayList<>();
 
         try (KafkaConsumer<String, Object> consumer = new KafkaConsumer<>(props)) {
@@ -62,18 +60,52 @@ public class AppKafkaMessageTableClient {
                 consumer.seekToEnd(partitions);
                 for (TopicPartition tp : partitions) {
                     long latestOffset = consumer.position(tp);
-                    consumer.seek(tp, Math.max(0, latestOffset - (currentPage + 1) * 100));
+                    long max = Math.max(0, latestOffset - (currentPage + 1) * 100);
+                    consumer.seek(tp, max);
                 }
             }
 
-            ConsumerRecords<String, Object> records = consumer.poll(Duration.ofMillis(100));
-            for (ConsumerRecord<String, Object> record : records) {
-                result.add(record);
-                if (result.size() >= 100) break;
+            boolean done = false;
+            Map<TopicPartition, Long> endOffsets = consumer.endOffsets(partitions);
+            while (!done) {
+                ConsumerRecords<String, Object> records = consumer.poll(0);
+                for (ConsumerRecord<String, Object> record : records) {
+                    if (recordMatchesFilter(record, searchFilter)) {
+                        result.add(record);
+                    }
+                }
+                consumer.commitSync();
+
+                done = true;
+                for (TopicPartition tp : partitions) {
+                    long position = consumer.position(tp);
+                    long end = endOffsets.get(tp);
+                    if (position < end) {
+                        done = false;
+                        break;
+                    }
+                }
             }
 
             return result;
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            return result;
         }
+    }
+
+    public static boolean recordMatchesFilter(ConsumerRecord<String, Object> record, SearchFilter searchFilter) {
+        Object key = record.key();
+        Object value = record.value();
+        if (key == null || value == null) {
+            return false;
+        }
+
+        boolean out = searchFilter.getValue() == null || value.toString().toLowerCase().contains(searchFilter.getValue().toLowerCase());
+        if (searchFilter.getKey() != null && !key.toString().toLowerCase().contains(searchFilter.getKey().toLowerCase())) {
+            out = false;
+        }
+        return out;
     }
 
     public void cancelSubscribe() {

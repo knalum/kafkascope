@@ -20,11 +20,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static no.knalum.kafka.AppKafkaMessageTableClient.recordMatchesFilter;
+
 public class MessageTable extends JPanel implements MessageListener {
     private final JTable table;
     private String selectedTopic;
     private int currentPage = 0;
     private SwingWorker<Void, Void> activeWorker;
+    private SearchFilter searchFilter = new SearchFilter();
 
     public MessageTable() {
         setDoubleBuffered(true);
@@ -105,6 +108,13 @@ public class MessageTable extends JPanel implements MessageListener {
                 return;
             }
             subscribeOrGetFromKafka(selectedTopic);
+        } else if (message instanceof SearchFilterAppliedMessage) {
+            if (selectedTopic == null) {
+                return;
+            }
+            this.searchFilter.setValue(((SearchFilterAppliedMessage) message).valueField().getText());
+            this.searchFilter.setKey(((SearchFilterAppliedMessage) message).keyField().getText());
+            subscribeOrGetFromKafka(selectedTopic);
         }
     }
 
@@ -122,11 +132,13 @@ public class MessageTable extends JPanel implements MessageListener {
                     AppKafkaMessageTableClient.getInstance().subscribe(selectedTopic, (ConsumerRecords<String, Object> o) -> {
                         for (ConsumerRecord<String, Object> record : o) {
                             if (isCancelled()) break;
-                            SwingUtilities.invokeLater(() -> model.insertRow(0, recordToObjectRow(record)));
+                            if (recordMatchesFilter(record, searchFilter)) {
+                                SwingUtilities.invokeLater(() -> model.insertRow(0, recordToObjectRow(record)));
+                            }
                         }
                     });
                 } else {
-                    List<ConsumerRecord<String, Object>> records = AppKafkaMessageTableClient.getInstance().getRecords(selectedTopic, (SortPane.SortType) SortPane.sortChoice.getSelectedItem(), currentPage);
+                    List<ConsumerRecord<String, Object>> records = AppKafkaMessageTableClient.getInstance().getRecords(selectedTopic, (SortPane.SortType) SortPane.sortChoice.getSelectedItem(), currentPage, searchFilter);
                     SwingUtilities.invokeLater(() -> setTableRecords(records));
 
                     if (SortPane.getSortChoice() == SortPane.SortType.Newest) {
@@ -134,7 +146,9 @@ public class MessageTable extends JPanel implements MessageListener {
                         AppKafkaMessageTableClient.getInstance().subscribe(selectedTopic, (ConsumerRecords<String, Object> o) -> {
                             for (ConsumerRecord<String, Object> record : o) {
                                 if (isCancelled()) break;
-                                SwingUtilities.invokeLater(() -> model.insertRow(0, recordToObjectRow(record)));
+                                if (recordMatchesFilter(record, searchFilter)) {
+                                    SwingUtilities.invokeLater(() -> model.insertRow(0, recordToObjectRow(record)));
+                                }
                             }
                         });
                     }

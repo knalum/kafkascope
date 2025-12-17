@@ -1,14 +1,17 @@
 package no.knalum;
 
+import com.github.javafaker.Faker;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
+@Disabled
 public class BulkMessageTest {
 
     @Test
@@ -19,9 +22,10 @@ public class BulkMessageTest {
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 
         KafkaProducer<String, String> prod = new KafkaProducer<>(props);
-
+        Faker faker = new Faker();
         for (int i = 0; i < 1000; i++) {
-            prod.send(new ProducerRecord<>("3159", "key1", String.valueOf(Math.random()))).get();
+            String randomWord = faker.lorem().word();
+            prod.send(new ProducerRecord<>("3159", "key1", randomWord)).get();
             Thread.sleep(10);
         }
     }

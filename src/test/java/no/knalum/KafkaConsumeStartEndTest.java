@@ -1,18 +1,22 @@
 package no.knalum;
 
 import com.fasterxml.jackson.databind.deser.std.StringDeserializer;
+import no.knalum.config.BrokerConfig;
 import no.knalum.kafka.CustomValueDeserializer;
+import no.knalum.ui.rightview.messagetable.SearchFilter;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.Properties;
+import java.util.*;
+
+import static no.knalum.kafka.AppKafkaMessageTableClient.recordMatchesFilter;
 
 @Disabled
 public class KafkaConsumeStartEndTest {
@@ -42,6 +46,63 @@ public class KafkaConsumeStartEndTest {
             records.forEach(record -> {
                 System.out.println(record.offset());
             });
+        }
+    }
+
+    @Test
+    void consumeFromBack() {
+        BrokerConfig.getInstance().setUrl("localhost:29092");
+        BrokerConfig.getInstance().setSchemaRegistryUrl("http://schema-registry:8081");
+        Properties props = new Properties();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:29092");
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, CustomValueDeserializer.class);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "paging-consumer");
+        props.put("schema.registry.url", "http://schema-registry:8081");
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 500);
+
+        String topic = "3159";
+
+        List<ConsumerRecord<String, Object>> result = new ArrayList<>();
+
+        try (KafkaConsumer<String, Object> consumer = new KafkaConsumer<>(props)) {
+            List<PartitionInfo> partitionInfos = consumer.partitionsFor(topic);
+            List<TopicPartition> partitions = new ArrayList<>();
+            for (PartitionInfo p : partitionInfos) {
+                partitions.add(new TopicPartition(topic, p.partition()));
+            }
+            consumer.assign(partitions);
+            long currentPage = 0;
+            for (TopicPartition tp : partitions) {
+                consumer.seek(tp, currentPage * 100L);
+            }
+            SearchFilter searchFilter = new SearchFilter();
+            searchFilter.setKey("asd");
+
+            boolean done = false;
+            Map<TopicPartition, Long> endOffsets = consumer.endOffsets(partitions);
+            while (!done) {
+                ConsumerRecords<String, Object> records = consumer.poll(0);
+                for (ConsumerRecord<String, Object> record : records) {
+                    if (recordMatchesFilter(record, searchFilter)) {
+                        result.add(record);
+                    }
+                }
+                consumer.commitSync();
+
+                done = true;
+                for (TopicPartition tp : partitions) {
+                    long position = consumer.position(tp);
+                    long end = endOffsets.get(tp);
+                    if (position < end) {
+                        done = false;
+                        break;
+                    }
+                }
+            }
+
+            System.out.println(result.size());
         }
     }
 
