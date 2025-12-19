@@ -23,10 +23,10 @@ public class BulkMessageTest {
 
         KafkaProducer<String, String> prod = new KafkaProducer<>(props);
         Faker faker = new Faker();
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 100; i++) {
             String randomWord = faker.lorem().word();
             prod.send(new ProducerRecord<>("3159", "key1", randomWord)).get();
-            Thread.sleep(10);
+            Thread.sleep((long) (Math.random() * 200));
         }
     }
 

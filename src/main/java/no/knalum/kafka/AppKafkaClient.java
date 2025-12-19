@@ -13,6 +13,7 @@ import no.knalum.menu.BrokerDialogSettings;
 import no.knalum.menu.dialog.CreateTopicDialogParams;
 import no.knalum.message.ConnectedToBrokerMessage;
 import no.knalum.message.MessageBus;
+import no.knalum.message.StatusMessage;
 import no.knalum.modal.ErrorModal;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
@@ -49,11 +50,13 @@ public class AppKafkaClient {
 
     public static void connectToKafkaAndPopulateTree(String broker, String schema) {
         try {
+            MessageBus.getInstance().publish(new StatusMessage("Connecting to Kafka at " + broker));
             Set<String> topics = AppKafkaClient.connect(broker, schema);
             MessageBus.getInstance().publish(new ConnectedToBrokerMessage(BrokerConfig.getInstance().getBrokerUrl(), topics));
+            MessageBus.getInstance().publish(new StatusMessage("Connected to " + broker));
         } catch (Exception e) {
-            e.printStackTrace();
             LOGGER.error("Error connect to kafka and populate tree: {}", e.getMessage());
+            MessageBus.getInstance().publish(new StatusMessage("Not connected to broker"));
             ErrorModal.showError("Error connecting to Kafka: " + e.getMessage());
         }
     }
@@ -362,16 +365,11 @@ public class AppKafkaClient {
      * @param topic      The topic name (without -value suffix)
      * @param avroSchema The Avro schema as a String
      */
-    public static void setSchemaForTopic(String topic, String avroSchema) {
+    public static void setSchemaForTopic(String topic, String avroSchema) throws RestClientException, IOException {
         String schemaRegistryUrl = BrokerConfig.getInstance().getSchemaRegistryUrl();
         SchemaRegistryClient client = new CachedSchemaRegistryClient(schemaRegistryUrl, 10);
-        try {
-            // Register the schema for topic-value subject
-            int id = client.register(topic + "-value", new Schema.Parser().parse(avroSchema));
-            LOGGER.info("Registered schema for {}-value with id {}", topic, id);
-        } catch (Exception e) {
-            LOGGER.error("Error registering schema for topic {}: {}", topic, e.getMessage());
-            ErrorModal.showError("Error registering schema: " + e.getMessage());
-        }
+        // Register the schema for topic-value subject
+        int id = client.register(topic + "-value", new Schema.Parser().parse(avroSchema));
+        LOGGER.info("Registered schema for {}-value with id {}", topic, id);
     }
 }

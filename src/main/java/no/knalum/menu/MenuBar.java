@@ -10,7 +10,6 @@ import javax.swing.tree.DefaultMutableTreeNode;
 public class MenuBar extends JMenuBar implements MessageListener {
     private final KafkaScope kafkaScope;
     private DefaultMutableTreeNode selectedNode;
-    private JMenuItem exampleJsonMenuItem;
 
     public MenuBar(KafkaScope kafkaScope) {
         this.kafkaScope = kafkaScope;

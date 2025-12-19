@@ -39,7 +39,7 @@ build/
 
 ### Mac OS ###
 .DS_Store
-/broker-config_OLD.json
+/broker-config.json
 /broker-config.json
 /web/app.png
 /web/index.html

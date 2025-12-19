@@ -62,4 +62,12 @@ public class Util {
         }
         return null;
     }
+
+    public static void silentSleep(int timeoutMs) {
+        try {
+            Thread.sleep(timeoutMs);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

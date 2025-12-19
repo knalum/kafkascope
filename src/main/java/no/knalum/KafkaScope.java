@@ -1,5 +1,6 @@
 package no.knalum;
 
+import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import no.knalum.config.BrokerConfig;
 import no.knalum.config.ConfigSaver;
 import no.knalum.kafka.AppKafkaClient;
@@ -12,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Date;
 
 import static no.knalum.swingcomponents.Util.centerMainFrame;
 
@@ -20,6 +20,8 @@ public class KafkaScope extends JFrame {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaScope.class);
     private static KafkaScope kafkaScope;
+    private static long ts1;
+    private static long ts2;
 
     public static KafkaScope getInstance() {
         return kafkaScope;
@@ -31,15 +33,23 @@ public class KafkaScope extends JFrame {
         add(new StatusBar(), BorderLayout.SOUTH);
         ConfigSaver.loadConfig();
         if (BrokerConfig.getInstance().getBrokerUrl() != null) {
-            AppKafkaClient.connectToKafkaAndPopulateTree(BrokerConfig.getInstance().getConfig());
+            new SwingWorker<Void, Void>() {
+                @Override
+                protected Void doInBackground() throws Exception {
+                    AppKafkaClient.connectToKafkaAndPopulateTree(BrokerConfig.getInstance().getConfig());
+                    return null;
+                }
+            }.execute();
         }
-        LOGGER.info("Kafka Scope started at " + new Date());
+        ts2 = System.currentTimeMillis();
+        LOGGER.info("Kafka Scope started at " + (ts2 - ts1) + " ms");
     }
 
 
     public static void main(String[] args) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+        FlatMacLightLaf.setup();
+        ts1 = System.currentTimeMillis();
         setDockIcon();
-        UIManager.setLookAndFeel("com.formdev.flatlaf.themes.FlatMacLightLaf");
         GlobalTextPopupInstaller.install();
 
         kafkaScope = new KafkaScope();
