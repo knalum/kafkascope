@@ -4,6 +4,7 @@ import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import no.knalum.config.BrokerConfig;
 import no.knalum.config.ConfigSaver;
 import no.knalum.kafka.AppKafkaClient;
+import no.knalum.menu.ConnectToBrokerModal;
 import no.knalum.menu.MenuBar;
 import no.knalum.swingcomponents.GlobalTextPopupInstaller;
 import no.knalum.ui.MainSplitPane;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import javax.swing.*;
 import java.awt.*;
 
+import static no.knalum.menu.FileMenu.getBrokerDialogSettingsConsumer;
 import static no.knalum.swingcomponents.Util.centerMainFrame;
 
 public class KafkaScope extends JFrame {
@@ -31,20 +33,11 @@ public class KafkaScope extends JFrame {
         setJMenuBar(new MenuBar(this));
         add(new MainSplitPane());
         add(new StatusBar(), BorderLayout.SOUTH);
-        ConfigSaver.loadConfig();
-        if (BrokerConfig.getInstance().getBrokerUrl() != null) {
-            new SwingWorker<Void, Void>() {
-                @Override
-                protected Void doInBackground() throws Exception {
-                    AppKafkaClient.connectToKafkaAndPopulateTree(BrokerConfig.getInstance().getConfig());
-                    return null;
-                }
-            }.execute();
-        }
+
+        initBrokerConnectionOnStartup();
         ts2 = System.currentTimeMillis();
         LOGGER.info("Kafka Scope started at " + (ts2 - ts1) + " ms");
     }
-
 
     public static void main(String[] args) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         FlatMacLightLaf.setup();
@@ -71,6 +64,28 @@ public class KafkaScope extends JFrame {
             } catch (UnsupportedOperationException ignored) {
 
             }
+        }
+    }
+
+    private void initBrokerConnectionOnStartup() {
+        ConfigSaver.loadConfig();
+        if (BrokerConfig.getInstance().getBrokerUrl() == null) {
+            // Show connect modal if no config found
+            new SwingWorker<>() {
+                @Override
+                protected Object doInBackground() throws Exception {
+                    new ConnectToBrokerModal(getBrokerDialogSettingsConsumer()).setVisible(true);
+                    return null;
+                }
+            }.execute();
+        } else {
+            new SwingWorker<Void, Void>() {
+                @Override
+                protected Void doInBackground() throws Exception {
+                    AppKafkaClient.connectToKafkaAndPopulateTree(BrokerConfig.getInstance().getConfig());
+                    return null;
+                }
+            }.execute();
         }
     }
 }

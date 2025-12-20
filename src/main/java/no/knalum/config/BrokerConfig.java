@@ -46,6 +46,6 @@ public class BrokerConfig extends Model {
     }
 
     public BrokerDialogSettings getConfig() {
-        return new BrokerDialogSettings(getBrokerUrl(), getSchemaRegistryUrl());
+        return new BrokerDialogSettings(getBrokerUrl(), getSchemaRegistryUrl(), null);
     }
 }

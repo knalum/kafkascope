@@ -1,6 +1,7 @@
 package no.knalum.config;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -10,7 +11,7 @@ import java.io.IOException;
 public class ConfigSaver {
     public static void saveConfig() {
         BrokerConfig config = BrokerConfig.getInstance();
-        Gson gson = new Gson();
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
         String json = gson.toJson(config);
         try (FileWriter writer = new FileWriter("broker-config.json")) {
             writer.write(json);

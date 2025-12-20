@@ -35,6 +35,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class AppKafkaClient {
 
@@ -45,19 +47,23 @@ public class AppKafkaClient {
         java.util.Properties props = new java.util.Properties();
         props.put("bootstrap.servers", broker);
         AdminClient client = AdminClient.create(props);
-        return client.listTopics().names().get();
+        try {
+            return client.listTopics().names().get(5L, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public static void connectToKafkaAndPopulateTree(String broker, String schema) {
+    public static void connectToKafkaAndPopulateTree(String broker, String schema) throws ExecutionException, InterruptedException {
         try {
             MessageBus.getInstance().publish(new StatusMessage("Connecting to Kafka at " + broker));
             Set<String> topics = AppKafkaClient.connect(broker, schema);
-            MessageBus.getInstance().publish(new ConnectedToBrokerMessage(BrokerConfig.getInstance().getBrokerUrl(), topics));
+            MessageBus.getInstance().publish(new ConnectedToBrokerMessage(broker, topics));
             MessageBus.getInstance().publish(new StatusMessage("Connected to " + broker));
         } catch (Exception e) {
+            MessageBus.getInstance().publish(new StatusMessage("Not connected"));
             LOGGER.error("Error connect to kafka and populate tree: {}", e.getMessage());
-            MessageBus.getInstance().publish(new StatusMessage("Not connected to broker"));
-            ErrorModal.showError("Error connecting to Kafka: " + e.getMessage());
+            throw e;
         }
     }
 
@@ -280,7 +286,7 @@ public class AppKafkaClient {
 
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(generateExampleJson(schema));
         } catch (Exception e) {
-            e.printStackTrace();
+
         }
         return "N/A";
     }
@@ -342,22 +348,9 @@ public class AppKafkaClient {
         }
     }
 
-    public static void connectToKafkaAndPopulateTree(BrokerDialogSettings cb) {
+    public static void connectToKafkaAndPopulateTree(BrokerDialogSettings cb) throws Exception {
         connectToKafkaAndPopulateTree(cb.broker(), cb.schemaReg());
     }
-
-    public static String getAvroSchemaForTopic(String topic) {
-        SchemaRegistryClient client =
-                new io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient(BrokerConfig.getInstance().getSchemaRegistryUrl(), 10);
-        SchemaMetadata metadata = null;
-        try {
-            metadata = client.getLatestSchemaMetadata(topic + "-value");
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        return metadata.getSchema();
-    }
-
 
     /**
      * Sets the Avro schema for a topic in the Schema Registry.

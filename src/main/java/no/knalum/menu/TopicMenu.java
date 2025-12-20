@@ -5,6 +5,7 @@ import no.knalum.kafka.AppKafkaClient;
 import no.knalum.menu.dialog.CreateNewTopicDialog;
 import no.knalum.menu.dialog.CreateTopicDialogParams;
 import no.knalum.message.*;
+import no.knalum.modal.ErrorModal;
 import no.knalum.swingcomponents.common.TextAreaDialog;
 import no.knalum.ui.rightview.producepanel.SetSchemaDialog;
 import no.knalum.ui.treeview.node.TopicNode;
@@ -17,11 +18,12 @@ import java.util.function.Consumer;
 
 public class TopicMenu extends JMenu implements MessageListener {
     private final JMenuItem displaySchemaMenuItem;
+    private final JMenuItem createNewTopicItem;
     private String selectedTopic;
 
     public TopicMenu() {
         super("Topic");
-        add(new JMenuItem("Create new topic...") {{
+        add(this.createNewTopicItem = new JMenuItem("Create new topic...") {{
             addActionListener(e -> new CreateNewTopicDialog(new Consumer<CreateTopicDialogParams>() {
                 @Override
                 public void accept(CreateTopicDialogParams createTopicDialogParams) {
@@ -36,10 +38,15 @@ public class TopicMenu extends JMenu implements MessageListener {
 
                 }
             }).setVisible(true));
+            setEnabled(false);
         }});
         JMenuItem refreshItem = new JMenuItem("Refresh topics");
         refreshItem.addActionListener(e -> {
-            AppKafkaClient.connectToKafkaAndPopulateTree(BrokerConfig.getInstance().getConfig());
+            try {
+                AppKafkaClient.connectToKafkaAndPopulateTree(BrokerConfig.getInstance().getConfig());
+            } catch (Exception ex) {
+                ErrorModal.showError("Error connecting to Kafka: " + ex.getMessage());
+            }
         });
         refreshItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
         add(refreshItem);
@@ -88,6 +95,8 @@ public class TopicMenu extends JMenu implements MessageListener {
                 this.selectedTopic = msg.selectedNode().getUserObject().toString();
             }
             displaySchemaMenuItem.setEnabled(msg.selectedNode() instanceof TopicNode);
+        } else if (message instanceof ConnectedToBrokerMessage msg) {
+            createNewTopicItem.setEnabled(true);
         }
     }
 }

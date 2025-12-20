@@ -11,10 +11,20 @@ public class ErrorModal extends AppDialog {
     }
 
     public static void showError(String message) {
-        JOptionPane.showMessageDialog(null, message, "Error", JOptionPane.ERROR_MESSAGE);
+        // Always show error modal in front
+        JOptionPane optionPane = new JOptionPane(message, JOptionPane.ERROR_MESSAGE);
+        JDialog dialog = optionPane.createDialog(null, "Error");
+        dialog.setModal(true);
+        dialog.setAlwaysOnTop(true);
+        dialog.setVisible(true);
     }
 
     public static void showInfo(String message) {
-        JOptionPane.showMessageDialog(null, message, "Error", JOptionPane.INFORMATION_MESSAGE);
+        // Always show info modal in front
+        JOptionPane optionPane = new JOptionPane(message, JOptionPane.INFORMATION_MESSAGE);
+        JDialog dialog = optionPane.createDialog(null, "Info");
+        dialog.setModal(true);
+        dialog.setAlwaysOnTop(true);
+        dialog.setVisible(true);
     }
 }

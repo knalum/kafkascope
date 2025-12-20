@@ -30,9 +30,9 @@ public class StatsPanel extends JPanel implements MessageListener {
         add(configPanel);
         MessageBus.getInstance().subscribe(this);
 
-        configPanel.add(this.countField = createRow("Count", "", false));
-        configPanel.add(this.sizeField = createRow("Size", "", false));
-        configPanel.add(this.partitionsField = createRow("Partitions", "", false));
+        configPanel.add(this.countField = createRow("Count", "", false, "Count"));
+        configPanel.add(this.sizeField = createRow("Size", "", false, "Size"));
+        configPanel.add(this.partitionsField = createRow("Partitions", "", false, "Partitions"));
 
         JButton refreshButton = new JButton("Refresh");
         refreshButton.addActionListener(e -> {

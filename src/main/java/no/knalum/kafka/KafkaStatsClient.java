@@ -14,7 +14,7 @@ import java.util.Set;
 public class KafkaStatsClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStatsClient.class);
-    public static final String SERVICE_JMX_RMI_JNDI_RMI_LOCALHOST_9999_JMXRMI = "service:jmx:rmi:///jndi/rmi://localhost:31001/jmxrmi";
+    public static final String SERVICE_JMX_RMI_JNDI_RMI_LOCALHOST_9999_JMXRMI = "service:jmx:rmi:///jndi/rmi://localhost:9999/jmxrmi";
 
     public record TopicStats(Long size, Long count, Integer numPartitions) {
     }
@@ -47,6 +47,7 @@ public class KafkaStatsClient {
             }
             jmxc.close();
         } catch (Exception ex) {
+            ex.printStackTrace();
             LOGGER.error("Failed to get number of partitions for topic {}: {}", topicName, ex.getMessage());
             return -1;
         }

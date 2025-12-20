@@ -21,7 +21,7 @@ public class Util {
 
     public static JTextField findTextFieldByName(Container root, String name) {
         for (Component c : root.getComponents()) {
-            if (c instanceof JTextField tf && name.equals(tf.getName())) {
+            if (c instanceof JTextField tf && name.toLowerCase().equals(tf.getName().toLowerCase())) {
                 return tf;
             }
             if (c instanceof Container) {

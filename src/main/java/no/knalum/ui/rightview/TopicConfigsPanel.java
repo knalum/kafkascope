@@ -51,17 +51,17 @@ public class TopicConfigsPanel extends JPanel implements MessageListener {
         return jPanel;
     }
 
-    public static JPanel createRow(String labelText, String value, boolean isEditable) {
+    public static JPanel createRow(String labelText, String value, boolean isEditable, String name) {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
 
         JLabel label = new JLabel(labelText);
         JTextField textField = new JTextField(value);
-        textField.setName(labelText);
+        textField.setName(name);
         textField.setEditable(isEditable);
 
         // Optional: align label and text field nicely
-        label.setPreferredSize(new Dimension(100, label.getPreferredSize().height));
+        label.setPreferredSize(new Dimension(150, label.getPreferredSize().height));
         textField.setMaximumSize(new Dimension(Integer.MAX_VALUE, textField.getPreferredSize().height));
 
         panel.add(label);
@@ -89,7 +89,7 @@ public class TopicConfigsPanel extends JPanel implements MessageListener {
         Collection<ConfigEntry> configEntries = AppKafkaClient.describeTopic2(topic).stream().sorted(Comparator.comparing(ConfigEntry::name)).toList();
         configPanel.removeAll();
         for (ConfigEntry configEntry : configEntries) {
-            configPanel.add(createRow(configEntry.name(), configEntry.value(), true));
+            configPanel.add(createRow(configEntry.name(), configEntry.value(), true, configEntry.name()));
         }
         configPanel.revalidate();
         configPanel.repaint();

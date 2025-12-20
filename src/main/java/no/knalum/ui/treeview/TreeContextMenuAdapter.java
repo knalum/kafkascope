@@ -2,6 +2,7 @@ package no.knalum.ui.treeview;
 
 import no.knalum.config.BrokerConfig;
 import no.knalum.kafka.AppKafkaClient;
+import no.knalum.modal.ErrorModal;
 import no.knalum.ui.treeview.node.TopicNode;
 import org.apache.kafka.clients.admin.TopicDescription;
 
@@ -49,7 +50,11 @@ public class TreeContextMenuAdapter extends MouseAdapter {
                 JMenuItem deleteTopic = new JMenuItem("Delete topic");
                 deleteTopic.addActionListener(evt -> {
                     AppKafkaClient.deleteTopic(selectedNode.getUserObject().toString());
-                    AppKafkaClient.connectToKafkaAndPopulateTree(BrokerConfig.getInstance().getConfig());
+                    try {
+                        AppKafkaClient.connectToKafkaAndPopulateTree(BrokerConfig.getInstance().getConfig());
+                    } catch (Exception ex) {
+                        ErrorModal.showError("Error connecting to Kafka: " + ex.getMessage());
+                    }
                 });
                 popup.add(deleteTopic);
 

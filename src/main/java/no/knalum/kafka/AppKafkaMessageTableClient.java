@@ -89,7 +89,6 @@ public class AppKafkaMessageTableClient {
 
             return result;
         } catch (RuntimeException e) {
-            e.printStackTrace();
             return result;
         }
     }
