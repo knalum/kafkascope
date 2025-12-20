@@ -14,6 +14,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 
 import static no.knalum.menu.FileMenu.getBrokerDialogSettingsConsumer;
 import static no.knalum.swingcomponents.Util.centerMainFrame;

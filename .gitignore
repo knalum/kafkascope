@@ -43,3 +43,6 @@ build/
 /broker-config.json
 /web/app.png
 /web/index.html
+out
+runtime-macos
+brokerconfigs
