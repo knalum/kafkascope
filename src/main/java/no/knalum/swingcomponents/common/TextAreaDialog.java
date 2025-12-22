@@ -2,6 +2,7 @@ package no.knalum.swingcomponents.common;
 
 import no.knalum.KafkaScope;
 import no.knalum.swingcomponents.UserSettingsConfig;
+import no.knalum.swingcomponents.Util;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
@@ -13,7 +14,7 @@ public class TextAreaDialog extends JDialog {
     private final RSyntaxTextArea textArea;
 
     public TextAreaDialog(String value, boolean editable) {
-        super(KafkaScope.getInstance(), "Value", true);
+        super(KafkaScope.getInstance(), "Value", false);
 
         this.textArea = new RSyntaxTextArea(20, 60);
         textArea.setEditable(editable);
@@ -24,7 +25,7 @@ public class TextAreaDialog extends JDialog {
 
         add(sp);
         setSize(UserSettingsConfig.getMessageModalDimensions());
-        setLocationRelativeTo(null);
+        setLocation(Util.getCenterOfFrame(KafkaScope.getInstance()));
         addComponentListener(new java.awt.event.ComponentAdapter() {
             @Override
             public void componentResized(java.awt.event.ComponentEvent e) {

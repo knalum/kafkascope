@@ -1,11 +1,13 @@
 package no.knalum.menu;
 
 import no.knalum.KafkaScope;
+import no.knalum.config.BrokerConfig;
 import no.knalum.message.AppMessage;
 import no.knalum.message.MessageBus;
 import no.knalum.message.MessageListener;
 import no.knalum.message.StatusMessage;
 import no.knalum.swingcomponents.Util;
+import org.jdesktop.swingx.prompt.PromptSupport;
 
 import javax.swing.*;
 import java.awt.*;
@@ -20,7 +22,7 @@ public class ConnectToBrokerModal extends JDialog implements MessageListener {
     private final JButton connectBtn;
 
     public ConnectToBrokerModal(Consumer<BrokerDialogSettings> cb) {
-        super(KafkaScope.getInstance(), "Connect to Broker", true);
+        super(KafkaScope.getInstance(), "Connect to Broker", false);
 
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
@@ -34,8 +36,8 @@ public class ConnectToBrokerModal extends JDialog implements MessageListener {
         JPanel fieldPanel = new JPanel();
         fieldPanel.setLayout(new BoxLayout(fieldPanel, BoxLayout.Y_AXIS));
 
-        fieldPanel.add(this.brokerRow = createRow("Bootstrap servers URL", "", true, "broker"));
-        fieldPanel.add(this.schemaRow = createRow("Schema registry URL", "", true, "schema"));
+        fieldPanel.add(this.brokerRow = createRow("Bootstrap servers URL", BrokerConfig.getInstance().getBrokerUrl(), true, "broker"));
+        fieldPanel.add(this.schemaRow = createRow("Schema registry URL", BrokerConfig.getInstance().getSchemaRegistryUrl(), true, "schema"));
 
         add(fieldPanel, BorderLayout.CENTER);
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));

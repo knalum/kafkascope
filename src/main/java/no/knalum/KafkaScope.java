@@ -19,7 +19,6 @@ import java.io.FileOutputStream;
 import java.io.PrintStream;
 
 import static no.knalum.menu.FileMenu.getBrokerDialogSettingsConsumer;
-import static no.knalum.swingcomponents.Util.centerMainFrame;
 
 public class KafkaScope extends JFrame {
 
@@ -46,13 +45,14 @@ public class KafkaScope extends JFrame {
         FlatMacLightLaf.setup();
         ts1 = System.currentTimeMillis();
         setDockIcon();
+        UIManager.setLookAndFeel("com.formdev.flatlaf.themes.FlatMacLightLaf");
         GlobalTextPopupInstaller.install();
 
         kafkaScope = new KafkaScope();
-        centerMainFrame(kafkaScope);
+        kafkaScope.setLocation(700, 700);
         kafkaScope.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         kafkaScope.setSize(1000, 700);
-        kafkaScope.setLocationRelativeTo(null);
+
         kafkaScope.setTitle("KafkaScope \uD83D\uDD0D");
         kafkaScope.setVisible(true);
 

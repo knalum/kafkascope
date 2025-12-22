@@ -1,5 +1,8 @@
 package no.knalum.menu.dialog;
 
+import no.knalum.KafkaScope;
+import no.knalum.swingcomponents.Util;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -10,8 +13,9 @@ public class AppDialog extends JDialog {
     }
 
     public AppDialog(java.awt.Frame parent, String title, JComponent contentPane, String okButtonLabel, ActionListener okButtonCallback) {
-        super(parent, title, true);
+        super(parent, title, false);
         setLayout(new BorderLayout());
+        setLocation(Util.getCenterOfFrame(KafkaScope.getInstance()));
 
         getRootPane().registerKeyboardAction(e -> dispose(),
                 KeyStroke.getKeyStroke("ESCAPE"),
@@ -31,7 +35,6 @@ public class AppDialog extends JDialog {
         add(buttonPanel, BorderLayout.SOUTH);
         cancelButton.addActionListener(e -> dispose());
         pack(); // Set size according to components
-        setLocationRelativeTo(this);
         setVisible(true);
 
     }

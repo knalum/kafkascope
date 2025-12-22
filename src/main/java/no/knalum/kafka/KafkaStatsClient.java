@@ -47,8 +47,7 @@ public class KafkaStatsClient {
             }
             jmxc.close();
         } catch (Exception ex) {
-            ex.printStackTrace();
-            LOGGER.error("Failed to get number of partitions for topic {}: {}", topicName, ex.getMessage());
+            //LOGGER.error("Failed to get number of partitions for topic {}: {}", topicName, ex.getMessage());
             return -1;
         }
         return partitions.size();

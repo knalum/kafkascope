@@ -1,5 +1,7 @@
 package no.knalum.swingcomponents;
 
+import no.knalum.KafkaScope;
+
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
@@ -7,17 +9,17 @@ import java.awt.*;
 
 public class Util {
 
-    public static void centerMainFrame(JFrame frame) {
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice primary = ge.getDefaultScreenDevice();
-        Rectangle bounds = primary.getDefaultConfiguration().getBounds();
 
-        int x = bounds.x + (bounds.width - frame.getWidth()) / 2;
-        int y = bounds.y + (bounds.height - frame.getHeight()) / 2;
-
-        frame.setLocation(x, y);
+    public static Point getCenterOfFrame(JFrame frame) {
+        // Get the location of the frame on screen
+        Point location = frame.getLocationOnScreen();
+        // Get the size of the frame
+        Dimension size = frame.getSize();
+        // Calculate the center point
+        int x = location.x + size.width / 2;
+        int y = location.y + size.height / 2;
+        return new Point(x, y);
     }
-
 
     public static JTextField findTextFieldByName(Container root, String name) {
         for (Component c : root.getComponents()) {

@@ -24,6 +24,8 @@ import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
@@ -61,9 +63,14 @@ public class AppKafkaClient {
             MessageBus.getInstance().publish(new ConnectedToBrokerMessage(broker, topics));
             MessageBus.getInstance().publish(new StatusMessage("Connected to " + broker));
         } catch (Exception e) {
-            MessageBus.getInstance().publish(new StatusMessage("Not connected"));
+            e.printStackTrace();
             LOGGER.error("Error connect to kafka and populate tree: {}", e.getMessage());
-            throw e;
+            MessageBus.getInstance().publish(new StatusMessage("Not connected to broker"));
+            if (e instanceof KafkaException) {
+                ErrorModal.showError("Error connecting to Kafka: " + ((KafkaException) e).getCause().getMessage());
+            } else {
+                ErrorModal.showError("Error connecting to Kafka: " + e.getMessage());
+            }
         }
     }
 
@@ -74,7 +81,7 @@ public class AppKafkaClient {
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, broker);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        props.put("schema.registry.url", "http://localhost:8081");
+        props.put("schema.registry.url", BrokerConfig.getInstance().getSchemaRegistryUrl());
 
         Object recordValue;
         if (schemaForTopic == null) {
@@ -264,7 +271,7 @@ public class AppKafkaClient {
     }
 
     public static String getSchemaForTopic(String topic) {
-        SchemaRegistryClient cli = new CachedSchemaRegistryClient("http://localhost:8081", 100);
+        SchemaRegistryClient cli = new CachedSchemaRegistryClient(BrokerConfig.getInstance().getSchemaRegistryUrl(), 100);
         try {
             SchemaMetadata data = cli.getLatestSchemaMetadata(topic + "-value");
 
