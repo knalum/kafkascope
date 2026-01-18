@@ -2,7 +2,7 @@
 
 KafkaScope is a versatile desktop application for administration, monitoring, and working with [Apache Kafka](https://kafka.apache.org/).
 
-![App screenshot](https://raw.githubusercontent.com/knalum/kafkascope/web/app.png)
+![App screenshot](https://github.com/knalum/kafkascope/blob/main/web/app.png?raw=true)
 
 ## Features
 
