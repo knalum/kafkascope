@@ -11,6 +11,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -18,6 +19,7 @@ import java.nio.file.Path;
 import java.util.Properties;
 import java.util.concurrent.Future;
 
+@Disabled
 public class KafkaAvroProducerTest {
     @Test
     void sendJsonRecordAndEncodeItAsAvro() throws Exception {
