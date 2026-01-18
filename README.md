@@ -2,15 +2,14 @@
 
 KafkaScope is a versatile desktop application for administration, monitoring, and working with [Apache Kafka](https://kafka.apache.org/).
 
+![App screenshot](https://raw.githubusercontent.com/knalum/kafkascope/web/app.png)
+
 ## Features
 
 - **Browse Topics:** View all topics, partitions, and their metadata in your Kafka cluster.
 - **Produce & Consume:** Send and receive messages directly from the UI.
 - **Topic Management:** Create, delete, and describe topics.
 - **JMX Metrics:** Monitor broker and topic metrics via JMX.
-- **Clipboard Integration:** Copy cell data from tables with keyboard shortcuts.
-- **Dockable Views:** Clone and undock views for multi-window workflows.
-- **Error Handling:** User-friendly error dialogs for connection and operation issues.
 - **Configurable:** Easily configure broker connections and settings.
 
 ## Getting Started
@@ -22,7 +21,7 @@ KafkaScope is a versatile desktop application for administration, monitoring, an
 ### Build
 
 ```
-mvn clean package
+mvn clean install
 ```
 
 ### Run
@@ -37,8 +36,6 @@ java -jar target/kafkascope-1.0-SNAPSHOT.jar
 - **Browse Topics:** Use the left tree to explore topics and partitions.
 - **Produce Messages:** Use the producer panel to send messages to a topic.
 - **Consume Messages:** View consumed messages in the main table.
-- **Clone Views:** Use the File menu to open additional windows.
-- **Copy Data:** Select a cell and press `Ctrl+C` to copy its contents.
 
 ## License
 
