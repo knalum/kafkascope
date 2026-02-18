@@ -4,10 +4,11 @@ import no.knalum.kafka.AppKafkaMessageTableClient;
 import no.knalum.message.*;
 import no.knalum.swingcomponents.Util;
 import no.knalum.ui.treeview.node.TopicNode;
-import org.apache.kafka.clients.KafkaClient;
+import raven.datetime.DatePicker;
 
 import javax.swing.*;
 import java.awt.*;
+import java.time.LocalDate;
 import java.util.List;
 
 public class SortPane extends JPanel implements MessageListener {
@@ -25,6 +26,7 @@ public class SortPane extends JPanel implements MessageListener {
         add(sortChoice);
         add(createSearchButton());
         add(createPartitionDropdown());
+        add(createDatePicker());
         add(Box.createHorizontalGlue()); // Add max gap between sortChoice and buttons
         add(this.prevBtn = new JButton("Prev") {{
             setEnabled(false);
@@ -46,6 +48,24 @@ public class SortPane extends JPanel implements MessageListener {
 
         MessageBus.getInstance().subscribe(this);
         Util.setAllChildrenEnabled(false, getComponents());
+    }
+
+    private Component createDatePicker() {
+        DatePicker datePicker = new DatePicker();
+
+        // Optionally set initial value
+        datePicker.setSelectedDate(LocalDate.now());
+
+        JFormattedTextField editor = new JFormattedTextField();
+        datePicker.setEditor(editor);
+
+        datePicker.addDateSelectionListener(d -> {
+            System.out.println("Date: " + d);
+            // TODO: Implement
+        });
+
+        editor.setMaximumSize(new Dimension(100, 25));
+        return editor;
     }
 
     private Component createPartitionDropdown() {
@@ -72,7 +92,7 @@ public class SortPane extends JPanel implements MessageListener {
         if (message instanceof TreeTopicChangedMessage msg) {
             Util.setAllChildrenEnabled(msg.selectedNode() instanceof TopicNode, getComponents());
             this.numPartitions = new AppKafkaMessageTableClient().getNumberOfPartitions(msg.selectedNode().toString());
-            String partitionsJoined = numPartitions == null ? "" : "All,"+String.join(",", numPartitions.stream().map(String::valueOf).toList());
+            String partitionsJoined = numPartitions == null ? "" : "All," + String.join(",", numPartitions.stream().map(String::valueOf).toList());
 
             String[] split = partitionsJoined.split(",");
 
