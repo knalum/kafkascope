@@ -25,8 +25,9 @@ public class BulkMessageTest {
         Faker faker = new Faker();
         for (int i = 0; i < 100; i++) {
             String randomWord = faker.lorem().word();
-            prod.send(new ProducerRecord<>("3159", "key1", randomWord)).get();
+            prod.send(new ProducerRecord<>("qwe", "key_"+randomWord, randomWord)).get();
             Thread.sleep((long) (Math.random() * 200));
+            System.out.println(randomWord);
         }
     }
 

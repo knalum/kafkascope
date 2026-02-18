@@ -14,24 +14,26 @@ import org.apache.kafka.common.TopicPartition;
 import java.time.Duration;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class AppKafkaMessageTableClient {
-    static Properties props = new Properties();
     boolean isSubscribing = false;
     private Thread consumerThread;
 
-    static {
+    private static final int PAGE_SIZE = 100;
+
+    private static AppKafkaMessageTableClient instance;
+
+    private Properties getConsumerProps() {
+        Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BrokerConfig.getInstance().getBrokerUrl());
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, CustomValueDeserializer.class);
         props.put("schema.registry.url", BrokerConfig.getInstance().getSchemaRegistryUrl());
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
         props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 100);
+        return props;
     }
-
-    private static AppKafkaMessageTableClient instance;
-
 
     public static AppKafkaMessageTableClient getInstance() {
         if (instance == null) {
@@ -40,57 +42,177 @@ public class AppKafkaMessageTableClient {
         return instance;
     }
 
-    public List<ConsumerRecord<String, Object>> getRecords(String topic, SortPane.SortType sortChoice, int currentPage, SearchFilter searchFilter) {
-        List<ConsumerRecord<String, Object>> result = new ArrayList<>();
+    public List<ConsumerRecord<String, Object>> getRecords(String topic, SortPane.SortType sortType, int currentPage, SearchFilter searchFilter) {
+        Properties consumerProps = getConsumerProps();
 
-        try (KafkaConsumer<String, Object> consumer = new KafkaConsumer<>(props)) {
+        try (KafkaConsumer<String, Object> consumer = new KafkaConsumer<>(consumerProps)) {
+            // Get all partitions for the topic
             List<PartitionInfo> partitionInfos = consumer.partitionsFor(topic);
-            if (partitionInfos == null || partitionInfos.isEmpty()) return result;
-            List<TopicPartition> partitions = new ArrayList<>();
-            for (PartitionInfo p : partitionInfos) {
-                partitions.add(new TopicPartition(topic, p.partition()));
-            }
-            consumer.assign(partitions);
-            if (sortChoice == SortPane.SortType.Oldest) {
-                for (TopicPartition tp : partitions) {
-                    consumer.seek(tp, currentPage * 100L);
-                }
-            } else {
-                // Newest
-                consumer.seekToEnd(partitions);
-                for (TopicPartition tp : partitions) {
-                    long latestOffset = consumer.position(tp);
-                    long max = Math.max(0, latestOffset - (currentPage + 1) * 100);
-                    consumer.seek(tp, max);
-                }
+            if (partitionInfos == null || partitionInfos.isEmpty()) {
+                return Collections.emptyList();
             }
 
-            boolean done = false;
-            Map<TopicPartition, Long> endOffsets = consumer.endOffsets(partitions);
-            while (!done) {
-                ConsumerRecords<String, Object> records = consumer.poll(0);
-                for (ConsumerRecord<String, Object> record : records) {
-                    if (recordMatchesFilter(record, searchFilter)) {
-                        result.add(record);
+            List<TopicPartition> topicPartitions = partitionInfos.stream()
+                    .map(pi -> new TopicPartition(topic, pi.partition()))
+                    .collect(Collectors.toList());
+
+            // Assign all partitions to the consumer
+            consumer.assign(topicPartitions);
+
+            // Get beginning and end offsets for all partitions
+            Map<TopicPartition, Long> beginningOffsets = consumer.beginningOffsets(topicPartitions);
+            Map<TopicPartition, Long> endOffsets = consumer.endOffsets(topicPartitions);
+
+            // Calculate total records to fetch based on pagination
+            int skipCount = currentPage * PAGE_SIZE;
+            int maxRecordsToFetch = skipCount + PAGE_SIZE;
+
+            List<ConsumerRecord<String, Object>> allRecords;
+            if (sortType == SortPane.SortType.Newest || sortType == SortPane.SortType.Tail) {
+                // For newest/tail, start from end and go backwards
+                allRecords = fetchRecordsFromEnd(consumer, topicPartitions, beginningOffsets, endOffsets, maxRecordsToFetch, searchFilter);
+                allRecords.sort((r1, r2) -> Long.compare(r2.timestamp(), r1.timestamp()));
+            } else {
+                // For oldest, start from beginning
+                allRecords = fetchRecordsFromBeginning(consumer, topicPartitions, beginningOffsets, endOffsets, maxRecordsToFetch, searchFilter);
+                allRecords.sort(Comparator.comparingLong(ConsumerRecord::timestamp));
+            }
+
+            // Apply pagination: skip records and take PAGE_SIZE
+            if (skipCount >= allRecords.size()) {
+                return Collections.emptyList();
+            }
+
+            int endIndex = Math.min(skipCount + PAGE_SIZE, allRecords.size());
+            return new ArrayList<>(allRecords.subList(skipCount, endIndex));
+
+        } catch (KafkaException e) {
+            System.err.println("Error fetching records from Kafka: " + e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    private List<ConsumerRecord<String, Object>> fetchRecordsFromEnd(
+            KafkaConsumer<String, Object> consumer,
+            List<TopicPartition> topicPartitions,
+            Map<TopicPartition, Long> beginningOffsets,
+            Map<TopicPartition, Long> endOffsets,
+            int maxRecords,
+            SearchFilter searchFilter) {
+
+        List<ConsumerRecord<String, Object>> records = new ArrayList<>();
+
+        for (TopicPartition tp : topicPartitions) {
+            long endOffset = endOffsets.get(tp);
+            long beginningOffset = beginningOffsets.get(tp);
+
+            if (endOffset <= beginningOffset) {
+                continue; // No records in this partition
+            }
+
+            // Start from maxRecords before the end, or from beginning if fewer records exist
+            long startOffset = Math.max(beginningOffset, endOffset - maxRecords);
+            consumer.seek(tp, startOffset);
+
+            // Poll records from this partition
+            while (records.size() < maxRecords) {
+                ConsumerRecords<String, Object> polledRecords = consumer.poll(Duration.ofMillis(1000));
+                if (polledRecords.isEmpty()) {
+                    break;
+                }
+
+                for (ConsumerRecord<String, Object> record : polledRecords.records(tp)) {
+                    if (record.offset() >= endOffset) {
+                        break;
+                    }
+                    if (matchesFilter(record, searchFilter)) {
+                        records.add(record);
                     }
                 }
-                consumer.commitSync();
 
-                done = true;
-                for (TopicPartition tp : partitions) {
-                    long position = consumer.position(tp);
-                    long end = endOffsets.get(tp);
-                    if (position < end) {
-                        done = false;
+                if (consumer.position(tp) >= endOffset) {
+                    break;
+                }
+            }
+        }
+
+        return records;
+    }
+
+    private List<ConsumerRecord<String, Object>> fetchRecordsFromBeginning(
+            KafkaConsumer<String, Object> consumer,
+            List<TopicPartition> topicPartitions,
+            Map<TopicPartition, Long> beginningOffsets,
+            Map<TopicPartition, Long> endOffsets,
+            int maxRecords,
+            SearchFilter searchFilter) {
+
+        List<ConsumerRecord<String, Object>> records = new ArrayList<>();
+
+        // Seek to beginning of all partitions
+        for (TopicPartition tp : topicPartitions) {
+            consumer.seek(tp, beginningOffsets.get(tp));
+        }
+
+        // Poll records until we have enough or there are no more
+        int emptyPollCount = 0;
+        while (records.size() < maxRecords && emptyPollCount < 3) {
+            ConsumerRecords<String, Object> polledRecords = consumer.poll(Duration.ofMillis(1000));
+
+            if (polledRecords.isEmpty()) {
+                emptyPollCount++;
+                continue;
+            }
+
+            emptyPollCount = 0;
+
+            for (ConsumerRecord<String, Object> record : polledRecords) {
+                TopicPartition tp = new TopicPartition(record.topic(), record.partition());
+                if (record.offset() >= endOffsets.get(tp)) {
+                    continue;
+                }
+                if (matchesFilter(record, searchFilter)) {
+                    records.add(record);
+                    if (records.size() >= maxRecords) {
                         break;
                     }
                 }
             }
 
-            return result;
-        } catch (RuntimeException e) {
-            return result;
+            // Check if all partitions have reached their end
+            boolean allDone = topicPartitions.stream()
+                    .allMatch(tp -> consumer.position(tp) >= endOffsets.get(tp));
+            if (allDone) {
+                break;
+            }
         }
+
+        return records;
+    }
+
+    private boolean matchesFilter(ConsumerRecord<String, Object> record, SearchFilter searchFilter) {
+        if (searchFilter == null) {
+            return true;
+        }
+
+        String key = record.key();
+        Object value = record.value();
+
+        // Check key filter
+        if (searchFilter.getKey() != null && !searchFilter.getKey().isEmpty()) {
+            if (key == null || !key.toLowerCase().contains(searchFilter.getKey().toLowerCase())) {
+                return false;
+            }
+        }
+
+        // Check value filter
+        if (searchFilter.getValue() != null && !searchFilter.getValue().isEmpty()) {
+            if (value == null || !value.toString().toLowerCase().contains(searchFilter.getValue().toLowerCase())) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public static boolean recordMatchesFilter(ConsumerRecord<String, Object> record, SearchFilter searchFilter) {
@@ -116,10 +238,9 @@ public class AppKafkaMessageTableClient {
     public void subscribe(String selectedTopic, Consumer<ConsumerRecords<String, Object>> o) {
         cancelSubscribe();
         consumerThread = new Thread(() -> {
-            Properties threadProps = new Properties();
-            threadProps.putAll(props);
-            threadProps.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
-            try (KafkaConsumer<String, Object> consumer = new KafkaConsumer<>(threadProps)) {
+            Properties consumerProps = getConsumerProps();
+            consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
+            try (KafkaConsumer<String, Object> consumer = new KafkaConsumer<>(consumerProps)) {
                 isSubscribing = true;
                 consumer.subscribe(List.of(selectedTopic));
                 boolean firstPoll = true;
