@@ -3,6 +3,7 @@ package no.knalum.ui.rightview.messagetable;
 public class SearchFilter {
     String key;
     String value;
+    String partition;
 
     public SearchFilter() {
     }
@@ -21,5 +22,13 @@ public class SearchFilter {
 
     public void setKey(String key) {
         this.key = key;
+    }
+
+    public String getPartition() {
+        return partition;
+    }
+
+    public void setPartition(String partition) {
+        this.partition = partition;
     }
 }

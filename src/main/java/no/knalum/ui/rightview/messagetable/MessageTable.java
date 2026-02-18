@@ -115,6 +115,9 @@ public class MessageTable extends JPanel implements MessageListener {
             this.searchFilter.setValue(((SearchFilterAppliedMessage) message).valueField().getText());
             this.searchFilter.setKey(((SearchFilterAppliedMessage) message).keyField().getText());
             subscribeOrGetFromKafka(selectedTopic);
+        }else if(message instanceof PartitionFilterAppliedMessage){
+            this.searchFilter.setPartition(((PartitionFilterAppliedMessage) message).partition());
+            subscribeOrGetFromKafka(selectedTopic);
         }
     }
 

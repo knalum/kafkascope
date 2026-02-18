@@ -1,16 +1,21 @@
 package no.knalum.ui.rightview.messagetable;
 
+import no.knalum.kafka.AppKafkaMessageTableClient;
 import no.knalum.message.*;
 import no.knalum.swingcomponents.Util;
 import no.knalum.ui.treeview.node.TopicNode;
+import org.apache.kafka.clients.KafkaClient;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.List;
 
 public class SortPane extends JPanel implements MessageListener {
     public static JComboBox<SortType> sortChoice = new JComboBox<>(new SortType[]{SortType.Newest, SortType.Oldest, SortType.Tail,});
     private final JButton prevBtn;
     private final JButton nextBtn;
+    private List<Integer> numPartitions;
+    private JComboBox<String> partitionDropdown;
 
     public SortPane() {
         setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
@@ -19,6 +24,7 @@ public class SortPane extends JPanel implements MessageListener {
 
         add(sortChoice);
         add(createSearchButton());
+        add(createPartitionDropdown());
         add(Box.createHorizontalGlue()); // Add max gap between sortChoice and buttons
         add(this.prevBtn = new JButton("Prev") {{
             setEnabled(false);
@@ -42,6 +48,17 @@ public class SortPane extends JPanel implements MessageListener {
         Util.setAllChildrenEnabled(false, getComponents());
     }
 
+    private Component createPartitionDropdown() {
+
+        this.partitionDropdown = new JComboBox<>(new String[]{"All"});
+        partitionDropdown.setMaximumSize(new Dimension(150, partitionDropdown.getPreferredSize().height));
+
+        partitionDropdown.addActionListener(e -> {
+            MessageBus.getInstance().publish(new PartitionFilterAppliedMessage(partitionDropdown.getSelectedItem().toString()));
+        });
+        return partitionDropdown;
+    }
+
     private JButton createSearchButton() {
         JButton searchButton = new JButton("Search...");
         searchButton.addActionListener(e -> {
@@ -54,6 +71,12 @@ public class SortPane extends JPanel implements MessageListener {
     public void handleMessage(AppMessage message) {
         if (message instanceof TreeTopicChangedMessage msg) {
             Util.setAllChildrenEnabled(msg.selectedNode() instanceof TopicNode, getComponents());
+            this.numPartitions = new AppKafkaMessageTableClient().getNumberOfPartitions(msg.selectedNode().toString());
+            String partitionsJoined = numPartitions == null ? "" : "All,"+String.join(",", numPartitions.stream().map(String::valueOf).toList());
+
+            String[] split = partitionsJoined.split(",");
+
+            partitionDropdown.setModel(new DefaultComboBoxModel<>(partitionsJoined.isEmpty() ? new String[]{"All"} : split));
         }
     }
 

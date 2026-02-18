@@ -53,6 +53,12 @@ public class AppKafkaMessageTableClient {
             }
 
             List<TopicPartition> topicPartitions = partitionInfos.stream()
+                    .filter(partition->{
+                        if(searchFilter.getPartition()!=null && !searchFilter.getPartition().isBlank() && !searchFilter.getPartition().equals("All")){
+                            return partition.partition() == Integer.parseInt(searchFilter.getPartition());
+                        }
+                        return true;
+                    })
                     .map(pi -> new TopicPartition(topic, pi.partition()))
                     .collect(Collectors.toList());
 
@@ -260,5 +266,17 @@ public class AppKafkaMessageTableClient {
             }
         }, "KafkaTailConsumerThread-" + selectedTopic);
         consumerThread.start();
+    }
+
+    public List<Integer> getNumberOfPartitions(String string) {
+        Properties consumerProps = getConsumerProps();
+        try (KafkaConsumer<String, Object> consumer = new KafkaConsumer<>(consumerProps)) {
+            List<PartitionInfo> partitionInfos = consumer.partitionsFor(string);
+            return  partitionInfos.stream().map(p->p.partition()).collect(Collectors.toList());
+
+        } catch (KafkaException e) {
+            System.err.println("Error fetching partitions: " + e.getMessage());
+        }
+        return null;
     }
 }
